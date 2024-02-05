@@ -1,7 +1,15 @@
 ﻿@page "/"
+@inject NavigationManager NavManager
 
-<PageTitle>Home</PageTitle>
+@code{
+    [CascadingParameter] public Task<AuthenticationState> AuthenticationState{ get; set; }
+    protected async override Task OnInitializedAsync()
+    {
+        var user = (await AuthenticationState).User;
+        if (user.Identity!.IsAuthenticated)
+            NavManager.NavigateTo("/home/buscar-voos");
+        else
+            NavManager.NavigateTo("/identity/account/login");
 
-<h1>Hello, world!</h1>
-
-Welcome to your new app.
+    }
+}

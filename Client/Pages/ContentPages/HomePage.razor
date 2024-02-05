@@ -1,0 +1,22 @@
+﻿@page "/home/buscar-voos"
+@layout MainLayout
+@using Client.Pages.AdministrationPages
+<TableBanner/>
+
+@code {
+    [CascadingParameter] public Task<AuthenticationState> AuthenticationState { get; set; }
+    protected async override Task OnInitializedAsync()
+    {
+        await CheckUserAutentication();
+    }
+
+    private async Task CheckUserAutentication()
+    {
+        var user = (await AuthenticationState).User;
+        bool isUserAuthenticated = user.Identity!.IsAuthenticated;
+        if (!isUserAuthenticated)
+        {
+            NavManager.NavigateTo("/identity/account/login");
+        }
+    }
+}

@@ -176,6 +176,26 @@ namespace ServerLibrary.Data.Migrations
                     b.ToTable("Persons");
                 });
 
+            modelBuilder.Entity("BaseLibrary.Entities.RefreshTokenInfo", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Token")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("RefreshTokenInfos");
+                });
+
             modelBuilder.Entity("BaseLibrary.Entities.SystemRole", b =>
                 {
                     b.Property<int>("Id")
