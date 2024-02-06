@@ -1,6 +1,8 @@
+using BaseLibrary.Entities;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Server.Controllers;
 using ServerLibrary.Data;
 using ServerLibrary.Helpers;
 using ServerLibrary.Repositories.Contracts;
@@ -46,6 +48,15 @@ builder.Services.AddAuthentication(options =>
 
 
 builder.Services.AddScoped<IUserAccount, UserAccountRepository>();
+
+builder.Services.AddScoped<IGenericRepositoryInterface<Airport>, AirportRepository>();
+builder.Services.AddScoped<IGenericRepositoryInterface<Baggage>, BaggageRepository>();
+builder.Services.AddScoped<IGenericRepositoryInterface<City>, CityRepository>();
+builder.Services.AddScoped<IGenericRepositoryInterface<FlightClass>, FlightClassRepository>();
+builder.Services.AddScoped<IGenericRepositoryInterface<Flight>, FlightRepository>();
+builder.Services.AddScoped<IGenericRepositoryInterface<Passenger>, PassengerRepository>();
+builder.Services.AddScoped<IGenericRepositoryInterface<Ticket>, TicketRepository>();
+
 builder.Services.AddCors(options =>
     {
         options.AddPolicy("AllowBlazorWasm",
