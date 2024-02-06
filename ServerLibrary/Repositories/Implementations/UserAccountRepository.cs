@@ -22,15 +22,13 @@ namespace ServerLibrary.Repositories.Implementations
             if (user is null) return new GeneralResponse(false, "Model is empty");
 
             var checkUser = await FindUserByEmail(user.Email!);
-            if (checkUser != null) return new GeneralResponse(false, "User registered already");
+            if (checkUser != null) return new GeneralResponse(false, "Usuário já cadastrado");
 
-            var applicationUser = await AddToDatabase(new Person()
+            var applicationUser = await AddToDatabase(new ApplicationUser()
             {
                 Fullname = user.Fullname!,
                 Email = user.Email!,
                 Password = BCrypt.Net.BCrypt.HashPassword(user.Password),
-                CPF = user.CPF!,
-                BirthDate = (DateTime)user.BirthDate!,
             });
 
             var checkManagerRole = await appDbContext.SystemRoles.FirstOrDefaultAsync(_ => _.Name!.Equals(Constants.Manager));
@@ -38,7 +36,7 @@ namespace ServerLibrary.Repositories.Implementations
             {
                 var createManagerRole = await AddToDatabase(new SystemRole() { Name = Constants.Manager });
                 await AddToDatabase(new UserRole() { RoleId = createManagerRole.Id, PersonId = applicationUser.Id});
-               return new GeneralResponse(true, "Account Created");
+               return new GeneralResponse(true, "Conta criada com sucesso");
             }
 
             var checkUserRole = await appDbContext.SystemRoles.FirstOrDefaultAsync(_ => _.Name!.Equals(Constants.User));
@@ -52,7 +50,7 @@ namespace ServerLibrary.Repositories.Implementations
             {
                 await AddToDatabase(new UserRole() { RoleId = checkUserRole.Id, PersonId = applicationUser.Id });
             }
-                return new GeneralResponse(true, "Account Created");
+                return new GeneralResponse(true, "Conta criada com sucesso");
 
         }
 
@@ -61,18 +59,18 @@ namespace ServerLibrary.Repositories.Implementations
             if (user is null) return new LoginResponse(false, "Model is empty");
             
             var applicationUser = await FindUserByEmail(user.Email!);
-            if (applicationUser is null) return new LoginResponse(false, "User not found");
+            if (applicationUser is null) return new LoginResponse(false, "Usuário não encontrado");
 
             // Verify password
             if (!BCrypt.Net.BCrypt.Verify(user.Password, applicationUser.Password))
-                return new LoginResponse(false, "Email/Password not valid");
+                return new LoginResponse(false, "Email ou senha incorretos");
 
 
             var getUserRole = await FindUserRole(applicationUser.Id);
-            if (getUserRole is null) return new LoginResponse(false, "User not found");
+            if (getUserRole is null) return new LoginResponse(false, "Usuário não encontrado");
 
             var getRoleName = await FindRoleName(getUserRole.RoleId);
-            if (getUserRole is null) return new LoginResponse(false, "User not found");
+            if (getUserRole is null) return new LoginResponse(false, "Usuário não encontrado");
 
             string jwtToken = GenerateToken(applicationUser, getRoleName!.Name!);
             string refreshToken = GenerateRefreshToken();
@@ -88,11 +86,11 @@ namespace ServerLibrary.Repositories.Implementations
             {
                 await AddToDatabase(new RefreshTokenInfo() {Token = refreshToken, UserId = applicationUser.Id });
             }
-            return new LoginResponse(true, "Login successfully" , jwtToken, refreshToken);
+            return new LoginResponse(true, "Login realizado com sucesso" , jwtToken, refreshToken);
 
         }
 
-        private string GenerateToken(Person user, string role)
+        private string GenerateToken(ApplicationUser user, string role)
         {
             var securityKey = new  SymmetricSecurityKey(Encoding.UTF8.GetBytes(config.Value.Key!));
             var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
@@ -120,8 +118,8 @@ namespace ServerLibrary.Repositories.Implementations
 
         private static string GenerateRefreshToken() => Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
 
-        private async Task<Person> FindUserByEmail(string email) =>
-            await appDbContext.Persons.FirstOrDefaultAsync(_ => _.Email!.ToLower()!.Equals(email!.ToLower()));
+        private async Task<ApplicationUser> FindUserByEmail(string email) =>
+            await appDbContext.ApplicationUsers.FirstOrDefaultAsync(_ => _.Email!.ToLower()!.Equals(email!.ToLower()));
 
         private async Task<T> AddToDatabase<T>(T model)
         {
@@ -137,7 +135,7 @@ namespace ServerLibrary.Repositories.Implementations
             var findToken = await appDbContext.RefreshTokenInfos.FirstOrDefaultAsync(_=>_.Token!.Equals(token.Token));
             if (findToken is null) return new LoginResponse(false, "Refresh token is required");
 
-            var user = await appDbContext.Persons.FirstOrDefaultAsync(_ => _.Id.Equals(findToken.UserId));
+            var user = await appDbContext.ApplicationUsers.FirstOrDefaultAsync(_ => _.Id.Equals(findToken.UserId));
             if (user is null) return new LoginResponse(false, "Refresh token could not be generated because user not found");
 
 

@@ -1,8 +1,13 @@
-﻿namespace BaseLibrary.Entities
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace BaseLibrary.Entities
 {
-    public class Baggage 
+    public class Baggage : OtherBaseEntity
     {
-        public int Id { get; set; }
-        public required Ticket Ticket { get; set; }
+
+        public Ticket? Tickets { get; set; }
+
+        [Required] 
+        public int TicketId { get; set; }
     }
 }

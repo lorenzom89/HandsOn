@@ -27,7 +27,7 @@
                              <InputText @bind-Value=User.Email class="form-control"></InputText>
                          </div>
                          <div class="form-group mt-3">
-                             <label class="form-label">Password</label>
+                             <label class="form-label">Senha</label>
                              <input type="password" @bind=User.Password class="form-control"></input>
                          </div>
                          <div class="form-group mt-3 col-lg-12">
@@ -42,8 +42,8 @@
                          </div>
                          <div class="card-footer">
                              <span class=" text-center">
-                                 Don't have an account? |
-                                 <a class="btn-link" href="identity/account/register">Sign Up</a>
+                                 Não tem uma conta? |
+                                 <a class="btn-link" href="identity/account/register">Registrar</a>
                              </span>
                              <ValidationSummary/>
                          </div>
@@ -70,14 +70,13 @@
         var result = await accountService.SignInAsync(User);
         if (result.Flag)
         {
-            await DisplayDialog(result.Message, "Login Success");
             var customAuthStateProvider = (CustomAuthenticationStateProvider)AuthStateProvider;
             await customAuthStateProvider.UpdateAuthenticationState(new UserSession() { Token = result.Token, RefreshToken = result.RefreshToken });
             NavManager.NavigateTo("/", forceLoad: true);
         }
         else
         {
-            await DisplayDialog(result.Message, "Alert");
+            await DisplayDialog(result.Message, "Atenção");
         }
         ShowLoadingButton = false;
     }

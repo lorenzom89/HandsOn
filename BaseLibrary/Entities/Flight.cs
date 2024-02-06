@@ -2,15 +2,22 @@
 
 namespace BaseLibrary.Entities
 {
-    public class Flight
+    public class Flight : OtherBaseEntity
     {
-        public int Id { get; set; }
-        public required int FlightNumber { get; set; }
-        public required Airport Origin { get; set; }
-        public required Airport Destiny { get; set; }
-        public required DateTime FlightTime { get; set; }
-        public List<Class> Classes { get; set; } = [];
-        public List<Ticket> Passengers { get; set; } = [];
-    }
+        public Airport? OriginAirport { get; set; }
+        [Required]
+        public int OriginAirportId { get; set; }
 
+
+        public Airport? DestinyAirport { get; set; }
+        [Required]
+        public int DestinyAirportId { get; set; }
+
+        [Required]
+        public DateTime FlightTime { get; set; }
+
+        public List<FlightClass>? FlightClasses { get; set; }
+
+        public List<Ticket>? Tickets { get; set; }
+    }
 }

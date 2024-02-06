@@ -1,10 +1,16 @@
-﻿namespace BaseLibrary.Entities
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace BaseLibrary.Entities
 {
-    public class Airport
+    public class Airport : BaseEntity
     {
-        public int Id { get; set; }
-        public required City City { get; set; }
-        public required string Name { get; set; }
-        public required string CodIATA { get; set; }
+        [Required]
+        public string CodIATA { get; set; } = string.Empty;
+
+        public City? City { get; set; }
+
+        [Required]
+        public int CityId { get; set; }
+
     }
 }

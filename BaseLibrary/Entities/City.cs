@@ -1,9 +1,12 @@
-﻿namespace BaseLibrary.Entities
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace BaseLibrary.Entities
 {
-    public class City 
+    public class City : BaseEntity
     {
-        public int Id { get; set; }
-        public required string Name { get; set; }
-        public required string UF { get; set; }
+        [Required]
+        public string UF { get; set; } = string.Empty;
+
+        public List<Airport>? Airports { get; set; } 
     }
 }

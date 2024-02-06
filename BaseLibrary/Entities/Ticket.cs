@@ -2,16 +2,34 @@
 
 namespace BaseLibrary.Entities
 {
-    public class Ticket 
+    public class Ticket : OtherBaseEntity
     {
-        public int Id { get; set; }
-        public required Flight Flight { get; set; }
-        public required Class Class { get; set; }
-        public required Person Passenger { get; set; }
-        public required double TotalPrice { get; set; }
-        public required DateTime PurchaseTime { get; set; }
-        public required string Status { get; set; }
-        public bool BaggageCheck { get; set; }
+        [Required]
+        public string Seat { get; set; } = string.Empty;
+
+        [Required]
+        public bool Baggage { get; set; } = false;
+
+
+        [Required, DataType(DataType.Currency)]
+        public double TotalPrice => Baggage ? (FlightClass!.SeatPrice * 1.1) : FlightClass!.SeatPrice;
+
+        
+        public Flight? Flight { get; set; }
+        [Required]
+        public int FlightId { get; set; }
+
+
+
+        public FlightClass? FlightClass { get; set; }
+        [Required]
+        public int FlightClassId { get; set; }
+        
+
+
+        public Passenger? Passenger { get; set; }
+        [Required]
+        public int PassengerId { get; set; }
 
     }
 }

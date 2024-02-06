@@ -48,6 +48,36 @@ namespace ServerLibrary.Data.Migrations
                     b.ToTable("Airports");
                 });
 
+            modelBuilder.Entity("BaseLibrary.Entities.ApplicationUser", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Fullname")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int?>("PassengerId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Password")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PassengerId");
+
+                    b.ToTable("ApplicationUsers");
+                });
+
             modelBuilder.Entity("BaseLibrary.Entities.Baggage", b =>
                 {
                     b.Property<int>("Id")
@@ -55,6 +85,10 @@ namespace ServerLibrary.Data.Migrations
                         .HasColumnType("integer");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("SearchCode")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.Property<int>("TicketId")
                         .HasColumnType("integer");
@@ -87,34 +121,6 @@ namespace ServerLibrary.Data.Migrations
                     b.ToTable("Cities");
                 });
 
-            modelBuilder.Entity("BaseLibrary.Entities.Class", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<int?>("FlightId")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<int>("NumOfSeats")
-                        .HasColumnType("integer");
-
-                    b.Property<double>("PricePerSeat")
-                        .HasColumnType("double precision");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("FlightId");
-
-                    b.ToTable("Classes");
-                });
-
             modelBuilder.Entity("BaseLibrary.Entities.Flight", b =>
                 {
                     b.Property<int>("Id")
@@ -123,28 +129,29 @@ namespace ServerLibrary.Data.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<int>("DestinyId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("FlightNumber")
+                    b.Property<int>("DestinyAirportId")
                         .HasColumnType("integer");
 
                     b.Property<DateTime>("FlightTime")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<int>("OriginId")
+                    b.Property<int>("OriginAirportId")
                         .HasColumnType("integer");
+
+                    b.Property<string>("SearchCode")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("DestinyId");
+                    b.HasIndex("DestinyAirportId");
 
-                    b.HasIndex("OriginId");
+                    b.HasIndex("OriginAirportId");
 
                     b.ToTable("Flights");
                 });
 
-            modelBuilder.Entity("BaseLibrary.Entities.Person", b =>
+            modelBuilder.Entity("BaseLibrary.Entities.FlightClass", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -152,28 +159,53 @@ namespace ServerLibrary.Data.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<DateTime>("BirthDate")
-                        .HasColumnType("timestamp with time zone");
+                    b.Property<int>("FlightId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<double>("SeatPrice")
+                        .HasColumnType("double precision");
+
+                    b.Property<int>("SeatQuantity")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FlightId");
+
+                    b.ToTable("FlightClasses");
+                });
+
+            modelBuilder.Entity("BaseLibrary.Entities.Passenger", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<string>("CPF")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(14)
+                        .HasColumnType("character varying(14)");
+
+                    b.Property<DateOnly>("DateOfBirth")
+                        .HasColumnType("date");
 
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("Fullname")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("Password")
+                    b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("text");
 
                     b.HasKey("Id");
 
-                    b.ToTable("Persons");
+                    b.ToTable("Passengers");
                 });
 
             modelBuilder.Entity("BaseLibrary.Entities.RefreshTokenInfo", b =>
@@ -220,10 +252,10 @@ namespace ServerLibrary.Data.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<bool>("BaggageCheck")
+                    b.Property<bool>("Baggage")
                         .HasColumnType("boolean");
 
-                    b.Property<int>("ClassId")
+                    b.Property<int>("FlightClassId")
                         .HasColumnType("integer");
 
                     b.Property<int>("FlightId")
@@ -232,19 +264,17 @@ namespace ServerLibrary.Data.Migrations
                     b.Property<int>("PassengerId")
                         .HasColumnType("integer");
 
-                    b.Property<DateTime>("PurchaseTime")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Status")
+                    b.Property<string>("SearchCode")
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<double>("TotalPrice")
-                        .HasColumnType("double precision");
+                    b.Property<string>("Seat")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ClassId");
+                    b.HasIndex("FlightClassId");
 
                     b.HasIndex("FlightId");
 
@@ -275,7 +305,7 @@ namespace ServerLibrary.Data.Migrations
             modelBuilder.Entity("BaseLibrary.Entities.Airport", b =>
                 {
                     b.HasOne("BaseLibrary.Entities.City", "City")
-                        .WithMany()
+                        .WithMany("Airports")
                         .HasForeignKey("CityId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -283,80 +313,103 @@ namespace ServerLibrary.Data.Migrations
                     b.Navigation("City");
                 });
 
+            modelBuilder.Entity("BaseLibrary.Entities.ApplicationUser", b =>
+                {
+                    b.HasOne("BaseLibrary.Entities.Passenger", "Passenger")
+                        .WithMany()
+                        .HasForeignKey("PassengerId");
+
+                    b.Navigation("Passenger");
+                });
+
             modelBuilder.Entity("BaseLibrary.Entities.Baggage", b =>
                 {
-                    b.HasOne("BaseLibrary.Entities.Ticket", "Ticket")
+                    b.HasOne("BaseLibrary.Entities.Ticket", "Tickets")
                         .WithMany()
                         .HasForeignKey("TicketId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Ticket");
-                });
-
-            modelBuilder.Entity("BaseLibrary.Entities.Class", b =>
-                {
-                    b.HasOne("BaseLibrary.Entities.Flight", null)
-                        .WithMany("Classes")
-                        .HasForeignKey("FlightId");
-                });
-
-            modelBuilder.Entity("BaseLibrary.Entities.Flight", b =>
-                {
-                    b.HasOne("BaseLibrary.Entities.Airport", "Destiny")
-                        .WithMany()
-                        .HasForeignKey("DestinyId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("BaseLibrary.Entities.Airport", "Origin")
-                        .WithMany()
-                        .HasForeignKey("OriginId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Destiny");
-
-                    b.Navigation("Origin");
-                });
-
-            modelBuilder.Entity("BaseLibrary.Entities.Ticket", b =>
-                {
-                    b.HasOne("BaseLibrary.Entities.Class", "Class")
-                        .WithMany("Tickets")
-                        .HasForeignKey("ClassId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("BaseLibrary.Entities.Flight", "Flight")
-                        .WithMany("Passengers")
-                        .HasForeignKey("FlightId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("BaseLibrary.Entities.Person", "Passenger")
-                        .WithMany()
-                        .HasForeignKey("PassengerId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Class");
-
-                    b.Navigation("Flight");
-
-                    b.Navigation("Passenger");
-                });
-
-            modelBuilder.Entity("BaseLibrary.Entities.Class", b =>
-                {
                     b.Navigation("Tickets");
                 });
 
             modelBuilder.Entity("BaseLibrary.Entities.Flight", b =>
                 {
-                    b.Navigation("Classes");
+                    b.HasOne("BaseLibrary.Entities.Airport", "DestinyAirport")
+                        .WithMany()
+                        .HasForeignKey("DestinyAirportId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
-                    b.Navigation("Passengers");
+                    b.HasOne("BaseLibrary.Entities.Airport", "OriginAirport")
+                        .WithMany()
+                        .HasForeignKey("OriginAirportId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("DestinyAirport");
+
+                    b.Navigation("OriginAirport");
+                });
+
+            modelBuilder.Entity("BaseLibrary.Entities.FlightClass", b =>
+                {
+                    b.HasOne("BaseLibrary.Entities.Flight", "Flight")
+                        .WithMany("FlightClasses")
+                        .HasForeignKey("FlightId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Flight");
+                });
+
+            modelBuilder.Entity("BaseLibrary.Entities.Ticket", b =>
+                {
+                    b.HasOne("BaseLibrary.Entities.FlightClass", "FlightClass")
+                        .WithMany("Tickets")
+                        .HasForeignKey("FlightClassId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("BaseLibrary.Entities.Flight", "Flight")
+                        .WithMany("Tickets")
+                        .HasForeignKey("FlightId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("BaseLibrary.Entities.Passenger", "Passenger")
+                        .WithMany("Tickets")
+                        .HasForeignKey("PassengerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Flight");
+
+                    b.Navigation("FlightClass");
+
+                    b.Navigation("Passenger");
+                });
+
+            modelBuilder.Entity("BaseLibrary.Entities.City", b =>
+                {
+                    b.Navigation("Airports");
+                });
+
+            modelBuilder.Entity("BaseLibrary.Entities.Flight", b =>
+                {
+                    b.Navigation("FlightClasses");
+
+                    b.Navigation("Tickets");
+                });
+
+            modelBuilder.Entity("BaseLibrary.Entities.FlightClass", b =>
+                {
+                    b.Navigation("Tickets");
+                });
+
+            modelBuilder.Entity("BaseLibrary.Entities.Passenger", b =>
+                {
+                    b.Navigation("Tickets");
                 });
 #pragma warning restore 612, 618
         }
