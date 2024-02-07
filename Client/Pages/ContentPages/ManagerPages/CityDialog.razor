@@ -1,0 +1,85 @@
+﻿<SfDialog Width="350px" IsModal= "true" ShowCloseIcon="true" @bind-Visible="IsVisible">
+
+    <DialogEvents OnOpen="OpenDialog"></DialogEvents>
+
+    <DialogTemplates>
+        <Header>@Title Cidade</Header>
+        <Content>
+            <EditForm Model="Cidade" Enhance OnSubmit="Save">
+                <div class="card border-success">
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label class="form-label">Nome</label>
+                             <InputText @bind-Value="Cidade.Name" class="form-control" />
+                            
+                             <label class="form-label">UF</label>
+                             <InputSelect @bind-Value="Cidade.UF" class="form-control">
+                                 <option value="AC">Acre</option>
+                                 <option value="AL">Alagoas</option>
+                                 <option value="AP">Amapá</option>
+                                 <option value="AM">Amazonas</option>
+                                 <option value="BA">Bahia</option>
+                                 <option value="CE">Ceará</option>
+                                 <option value="DF">Distrito Federal</option>
+                                 <option value="ES">Espírito Santo</option>
+                                 <option value="GO">Goiás</option>
+                                 <option value="MA">Maranhão</option>
+                                 <option value="MT">Mato Grosso</option>
+                                 <option value="MS">Mato Grosso do Sul</option>
+                                 <option value="MG">Minas Gerais</option>
+                                 <option value="PA">Pará</option>
+                                 <option value="PB">Paraíba</option>
+                                 <option value="PR">Paraná</option>
+                                 <option value="PE">Pernambuco</option>
+                                 <option value="PI">Piauí</option>
+                                 <option value="RJ">Rio de Janeiro</option>
+                                 <option value="RN">Rio Grande do Norte</option>
+                                 <option value="RS">Rio Grande do Sul</option>
+                                 <option value="RO">Rondônia</option>
+                                 <option value="RR">Roraima</option>
+                                 <option value="SC">Santa Catarina</option>
+                                 <option value="SP">São Paulo</option>
+                                 <option value="SE">Sergipe</option>
+                                 <option value="TO">Tocantins</option>
+                                 <option value="EX">Estrangeiro</option>
+                             </InputSelect>
+                        </div>
+                    </div>
+                </div>
+            </EditForm>
+        </Content>
+    </DialogTemplates>
+    <DialogButtons>
+         <DialogButton Content="Save" Type="Syncfusion.Blazor.Popups.ButtonType.Submit" IsPrimary="true" OnClick="Save" />
+    </DialogButtons>
+</SfDialog>
+
+ @code {
+    [Parameter] public City Cidade { get; set; } = new();
+    [Parameter] public EventCallback<City> HandleSaveOperationEvent { get; set; }
+
+    private bool IsVisible { get; set; } = false;
+    public string Title = "Adicionar";
+    public void OpenDialog()
+    {
+        IsVisible = true;
+        StateHasChanged();
+    }
+
+    async void Save()
+    {
+        if (string.IsNullOrEmpty(Cidade.Name))
+            await DialogService.AlertAsync("O nome da cidade deve ser preenchido", "Atenção!");
+        else
+            await HandleSaveOperationEvent.InvokeAsync(Cidade);
+
+        if (string.IsNullOrEmpty(Cidade.UF))
+            await DialogService.AlertAsync("A UF deve ser preenchida", "Atenção!");
+        else
+            await HandleSaveOperationEvent.InvokeAsync(Cidade);
+    }
+    public void ChangeTitle(string title)
+    {
+        Title = title;
+    }
+}

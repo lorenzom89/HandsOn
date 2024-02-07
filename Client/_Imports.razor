@@ -1,5 +1,7 @@
 ﻿@using System.Net.Http
 @using System.Net.Http.Json
+@using BaseLibrary.Entities
+@using Client.ApplicationStates
 @using Microsoft.AspNetCore.Components.Forms
 @using Microsoft.AspNetCore.Components.Routing
 @using Microsoft.AspNetCore.Components.Web
@@ -13,9 +15,31 @@
 
 @using BaseLibrary.DTOs
 @using ClientLibrary.Helpers
-@using ClientLibrary.Services.Contracts
 @using Microsoft.AspNetCore.Components.Authorization
+@using ClientLibrary.Services.Contracts
+@using Syncfusion.Blazor.Popups
+
+
+@using Client.Pages.ContentPages.ManagerPages
+@using Client.Pages.OtherPages
+
 
 @inject AuthenticationStateProvider AuthStateProvider
-@inject IUserAccountService accountService
 @inject NavigationManager NavManager
+
+@* //Navbar tabs communication stte handling *@
+@inject AllState allState
+
+@* //Authentication *@
+@inject IUserAccountService accountService
+
+@* //Syncfusion dialog service *@
+@inject SfDialogService DialogService
+
+@inject IGenericServiceInterface<Airport> airportService;
+@inject IGenericServiceInterface<Baggage> baggageService;
+@inject IGenericServiceInterface<City> cityService;
+@inject IGenericServiceInterface<Flight> flightService;
+@inject IGenericServiceInterface<FlightClass> flightClassService;
+@inject IGenericServiceInterface<Passenger> passengerService;
+@inject IGenericServiceInterface<Ticket> ticketService;

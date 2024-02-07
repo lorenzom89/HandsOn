@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.Runtime.CompilerServices;
+using System.Text.Json.Serialization;
 using BaseLibrary.Helpers;
 
 namespace BaseLibrary.Entities
@@ -15,7 +16,7 @@ namespace BaseLibrary.Entities
         [Required, DataType(DataType.EmailAddress)]
         public string Email { get; set; } = string.Empty;
 
-
+        [JsonIgnore]
         public List<Ticket>? Tickets { get; set; }
     }
 }

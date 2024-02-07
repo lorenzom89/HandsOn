@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace BaseLibrary.Entities
 {
@@ -6,7 +7,7 @@ namespace BaseLibrary.Entities
     {
         [Required]
         public string UF { get; set; } = string.Empty;
-
+        [JsonIgnore]
         public List<Airport>? Airports { get; set; } 
     }
 }

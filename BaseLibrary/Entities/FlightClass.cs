@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace BaseLibrary.Entities
 {
@@ -12,6 +13,7 @@ namespace BaseLibrary.Entities
         [Required, DataType(DataType.Currency)]
         public double SeatPrice { get; set; }
 
+        [JsonIgnore]
         public List<Ticket>? Tickets { get; set; }
 
         

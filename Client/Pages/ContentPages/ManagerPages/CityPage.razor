@@ -1,0 +1,149 @@
+﻿@implements IDisposable
+
+@if (allState.ShowAirport)
+{
+    <div class="container mt-5">
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h4 class="float-start">Cidade</h4>
+                        <button class="btn btn-outline-success float-end" @onclick="OpenDialog"><i class="bi bi-plus-circle-dotted"></i>Adicionar Cidade</button>
+                    </div>
+                    <div class="card-header" style="max-height:580px; overflow-x:hidden; overflow-y:scroll">
+                        <div class="card-body">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">#</th>
+                                        <th scope="col">Id</th>
+                                        <th scope="col">Nome</th>
+                                        <th scope="col">UF</th>
+                                        <th scope="col">Opções</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @if(Cities is not null)
+                                    {
+                                        int count = 1;
+                                        foreach (var item in Cities)
+                                        {
+                                            <tr>
+                                                <th scope="row">@count</th>
+                                                <th>@item.Id</th>
+                                                <th>@item.Name</th>
+                                                <th>@item.UF</th>
+                                                <th>
+                                                    <i class="bi bi-pencil text-info" id="cursorStyle" @onclick="()=>EditClicked(item)"></i>
+                                                    <i class="bi bi-trash text-danger" id="cursorStyle" @onclick="()=>DeleteClicked(item)"></i>
+ 
+                                                </th>
+                                            </tr>
+                                            count++;
+                                        }
+                                    }
+                                    else
+                                    {
+                                            <tr>
+                                                <td colspan="4"><div class="alert alert-info text-center">Nenhuma cidade cadastrada ainda</div></td>
+                                            </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+<CityDialog @ref="cityDialog"
+            HandleSaveOperationEvent="HandleSaveOperationEvent"
+            City="Cidade" />
+
+<style>
+    .cursorStyle{
+        cursor:pointer;
+    }
+</style>
+@code {
+
+    CityDialog? cityDialog;
+    City Cidade = new();
+    public string Title { get; set; } = "Adicionar";
+    public List<City> Cities { get; set; } = new();
+
+    protected async override Task OnInitializedAsync()
+    {
+        await GetCities();
+        allState.Action += StateHasChanged;
+    }
+    void OpenDialog()
+    {
+
+    }
+    private async Task GetCities()
+    {
+        Cities = await cityService.GetAll(Constants.CityBaseUrl);
+    }
+
+    //Add or Update
+    private async Task HandleSaveOperationEvent(City cidade)
+    {
+        bool successCheck = false;
+        if (cidade.Id > 0)
+        {
+            var result = await cityService.Update(cidade, Constants.CityBaseUrl);
+            successCheck = await DisplayMessage(result.Flag, result.Message);
+        }
+        else
+        {
+            var result = await cityService.Insert(cidade, Constants.CityBaseUrl);
+            successCheck = await DisplayMessage(result.Flag, result.Message);
+        }
+        if (successCheck)
+        {
+            Cidade = new();
+            await GetCities();
+            cityDialog?.ChangeTitle("Adicionar");
+        }
+    }
+    //Edit
+    private void EditClicked(City city)
+    {
+        cityDialog?.ChangeTitle("Atualizar");
+        Cidade = city;
+        OpenDialog();
+    }
+    //Delete
+    private async void DeleteClicked(City city)
+    {
+        bool confirm = await DialogService.ConfirmAsync($"Tem certeza que deseja deletar {city.Name} - {city.UF}?", "Confirmação");
+        if (!confirm) return;
+
+        var response = await cityService.DeleteById(city.Id, Constants.CityBaseUrl);
+        if (await DisplayMessage(response.Flag, response.Message)) 
+            await GetCities();
+    }
+
+    private async Task<bool> DisplayMessage(bool flag, string message)
+    { 
+        if (flag)
+        {
+            await DialogService.AlertAsync(message, "Operação realizada com sucesso");
+            return true;
+        }
+        else
+        {
+            await DialogService.AlertAsync(message, "Atenção!");
+            return false;
+        }
+    }
+
+    public void Dispose()
+    {
+        allState.Action -= StateHasChanged;
+    }
+}
+
+

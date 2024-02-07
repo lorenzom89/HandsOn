@@ -1,5 +1,7 @@
+using BaseLibrary.Entities;
 using Blazored.LocalStorage;
 using Client;
+using Client.ApplicationStates;
 using ClientLibrary.Helpers;
 using ClientLibrary.Services.Contracts;
 using ClientLibrary.Services.Implementations;
@@ -27,6 +29,17 @@ builder.Services.AddScoped<GetHttpClient>();
 builder.Services.AddScoped<LocalStorageService>();
 builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthenticationStateProvider>();
 builder.Services.AddScoped<IUserAccountService, UserAccountService>();
+
+
+builder.Services.AddScoped<IGenericServiceInterface<Airport>, GenericServiceImplementation<Airport>>();
+builder.Services.AddScoped<IGenericServiceInterface<Baggage>, GenericServiceImplementation<Baggage>>();
+builder.Services.AddScoped<IGenericServiceInterface<City>, GenericServiceImplementation<City>>();
+builder.Services.AddScoped<IGenericServiceInterface<FlightClass>, GenericServiceImplementation<FlightClass>>();
+builder.Services.AddScoped<IGenericServiceInterface<Flight>, GenericServiceImplementation<Flight>>();
+builder.Services.AddScoped<IGenericServiceInterface<Passenger>, GenericServiceImplementation<Passenger>>();
+builder.Services.AddScoped<IGenericServiceInterface<Ticket>, GenericServiceImplementation<Ticket>>();
+
+builder.Services.AddScoped<AllState>();
 
 builder.Services.AddSyncfusionBlazor();
 builder.Services.AddScoped<SfDialogService>();

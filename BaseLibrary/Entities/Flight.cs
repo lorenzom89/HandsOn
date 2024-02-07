@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace BaseLibrary.Entities
 {
@@ -16,8 +17,10 @@ namespace BaseLibrary.Entities
         [Required]
         public DateTime FlightTime { get; set; }
 
+        [JsonIgnore]
         public List<FlightClass>? FlightClasses { get; set; }
 
+        [JsonIgnore]
         public List<Ticket>? Tickets { get; set; }
     }
 }
