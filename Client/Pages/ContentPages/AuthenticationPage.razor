@@ -1,8 +1,15 @@
-﻿@page "/home/buscar-voos"
+﻿@page "/home"
 @layout MainLayout
-@using Client.Pages.ContentPages.ManagerPages
+
 <TableBanner/>
 
+
+<TicketsPage></TicketsPage>
+
+<CityPage></CityPage>
+<AirportPage></AirportPage>
+<FlightPage></FlightPage>
+<UserPage></UserPage>
 @code {
     [CascadingParameter] public Task<AuthenticationState> AuthenticationState { get; set; }
     protected async override Task OnInitializedAsync()

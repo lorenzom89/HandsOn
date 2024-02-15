@@ -23,10 +23,10 @@ namespace ClientLibrary.Services.Implementations
         }
 
 
-        public async Task<List<T>> GetById(int id, string baseUrl)
+        public async Task<T> GetById(int id, string baseUrl)
         {
             var httpClient = await getHttpClient.GetPrivateHttpClient();
-            var result = await httpClient.GetFromJsonAsync<List<T>>($"{baseUrl}/single/{id}");
+            var result = await httpClient.GetFromJsonAsync<T>($"{baseUrl}/single/{id}");
             return result!;
         }
 

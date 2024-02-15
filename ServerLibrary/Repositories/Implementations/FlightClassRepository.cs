@@ -18,7 +18,7 @@ namespace ServerLibrary.Repositories.Implementations
             return Success();
         }
 
-        public async Task<List<FlightClass>> GetAll() => await appDbContext.FlightClasses.ToListAsync();
+        public async Task<List<FlightClass>> GetAll() => await appDbContext.FlightClasses.AsNoTracking().Include(f => f.Flight).ToListAsync();
 
         public async Task<FlightClass> GetById(int id) => await appDbContext.FlightClasses.FindAsync(id);
 

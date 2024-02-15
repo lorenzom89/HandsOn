@@ -1,0 +1,87 @@
+﻿<SfDialog Width="350px" IsModal="true" ShowCloseIcon="true" @bind-Visible="IsVisible">
+
+    <DialogEvents OnOpen="OpenDialog"></DialogEvents>
+
+    <DialogTemplates>
+        <Header>@Title Aeroporto</Header>
+        <Content>
+            <EditForm Model="Airport" OnSubmit="Save">
+                <div class="card border-success">
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label class="form-label">Nome do Aeroporto</label>
+                            <InputText @bind-Value="Airport.Name" class="form-control" />
+
+                            <label class="form-label">Código IATA</label>
+                            <InputText @bind-Value="Airport.CodIATA" class="form-control" />
+
+                            <label class="form-label">Cidade</label>
+                            @if(Airport.City != null)
+                            {
+                                string selected = Airport.City!.Name;
+                                <SfDropDownList TValue="string" TItem="City" Placeholder="@selected" DataSource="Cities">
+                                    <DropDownListFieldSettings Value="Id" Text="Name"></DropDownListFieldSettings>
+                                    <DropDownListEvents TValue="string" TItem="City" ValueChange="OnValueChange"></DropDownListEvents>
+                                </SfDropDownList>
+                            }
+                            else
+                            {
+                                <SfDropDownList TValue="string" TItem="City" Placeholder="Selecione uma cidade" DataSource="Cities">
+                                    <DropDownListFieldSettings Value="Id" Text="Name"></DropDownListFieldSettings>
+                                    <DropDownListEvents TValue="string" TItem="City" ValueChange="OnValueChange"></DropDownListEvents>
+                                </SfDropDownList>
+                            }
+
+                        </div>
+                    </div>
+                </div>
+            </EditForm>
+        </Content>
+    </DialogTemplates>
+
+    <DialogButtons>
+        <DialogButton Content="Salvar" Type="Syncfusion.Blazor.Popups.ButtonType.Submit" IsPrimary="true" OnClick="Save" />
+    </DialogButtons>
+
+</SfDialog>
+
+@code {
+    [Parameter] public Airport Airport { get; set; } = new();
+    [Parameter] public List<City> Cities { get; set; } = new();
+    [Parameter] public EventCallback<Airport> HandleSaveOperationEvent { get; set; }
+
+    private bool IsVisible { get; set; } = false;
+    public string Title = "Adicionar";
+
+    public void OpenDialog()
+    {
+        IsVisible = true;
+        StateHasChanged();
+    }
+
+    private async void Save()
+    {
+        if (string.IsNullOrEmpty(Airport.Name))
+            await DialogService.AlertAsync("O Nome do aeroporto deve ser preenchido", "Atenção!");
+
+        else if (string.IsNullOrEmpty(Airport.CodIATA))
+            await DialogService.AlertAsync("O código IATA do aeroporto deve ser preenchido", "Atenção!");
+
+        else if (Airport.CityId <= 0)
+            await DialogService.AlertAsync("Selecione a cidade do aeroporto", "Atenção!");
+
+        else
+        {
+            await HandleSaveOperationEvent.InvokeAsync(Airport);
+        }
+    }
+
+    public void ChangeTitle(string title)
+    {
+        Title = title;
+    }
+    public void OnValueChange(ChangeEventArgs<string, City> args)
+    {
+        Airport.CityId = int.Parse(args.Value);
+    }
+}

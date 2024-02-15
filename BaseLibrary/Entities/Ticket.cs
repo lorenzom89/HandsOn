@@ -12,7 +12,7 @@ namespace BaseLibrary.Entities
 
 
         [Required, DataType(DataType.Currency)]
-        public double TotalPrice => Baggage ? (FlightClass!.SeatPrice * 1.1) : FlightClass!.SeatPrice;
+        public double? TotalPrice { get; set; } 
 
         
         public Flight? Flight { get; set; }

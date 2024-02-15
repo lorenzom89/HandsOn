@@ -70,13 +70,13 @@
     {
         if (string.IsNullOrEmpty(Cidade.Name))
             await DialogService.AlertAsync("O nome da cidade deve ser preenchido", "Atenção!");
-        else
-            await HandleSaveOperationEvent.InvokeAsync(Cidade);
-
         if (string.IsNullOrEmpty(Cidade.UF))
             await DialogService.AlertAsync("A UF deve ser preenchida", "Atenção!");
         else
             await HandleSaveOperationEvent.InvokeAsync(Cidade);
+
+        
+        
     }
     public void ChangeTitle(string title)
     {

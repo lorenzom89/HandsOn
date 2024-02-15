@@ -1,5 +1,4 @@
-﻿@using Microsoft.AspNetCore.Components.Authorization
-<AuthorizeView>
+﻿<AuthorizeView Roles="Manager, User">
     <Authorized>
         <div class="top-row ps-3 navbar navbar-dark">
             <div class="container-fluid">
@@ -18,70 +17,116 @@
 
         <div class="nav-scrollable">
             <nav class="flex-column">
-                <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="/" Match="NavLinkMatch.All">
-                        <span class="bi bi-airplane-fill" aria-hidden="true"></span> Buscar Voos
+                <div class="nav-item px-3 cursorStyle">
+                    <NavLink class="nav-link p-2" Match="NavLinkMatch.All">
+                        <span class="bi bi-airplane-fill fs-3 text-center" aria-hidden="true" style="margin-top:-2rem"></span> 
+                        <span> Buscar Voos</span>
                     </NavLink>
-                </div>
-                <!-- USER -->
-                <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="/passagens-compradas">
-                        <span class="bi bi-ticket-detailed-fill" aria-hidden="true"></span> Passagens Compradas
-                    </NavLink>
+                </div>             
+                <div class="nav-item px-3 cursorStyle">
+                    <a class="nav-link p-2" @onclick="TicketClicked">
+                        <span class="bi bi-ticket-detailed-fill fs-3 text-center" aria-hidden="true" style="margin-top:-2rem"></span>
+                        <span> Consulta de Passagens</span>
+                    </a>
                 </div>
 
-                <!--MANAGER-->
-                <div class="nav-item px-3">
-                    <NavLink class="nav-link" @onclick="ShowAdminMenuContainer" href="javascript:void()">
-                        <span class="bi bi-person-circle" aria-hidden="true"></span> Administração
-                    </NavLink>
-                </div>
-                <div class="nav-item px-3" style="margin-left:1.5rem; visibility:@CssStyle">
-                    <NavLink class="nav-link" href="/cidades">
+                <AuthorizeView Roles="Manager">
+                    <Authorized Context="managerAuthorized">
+                        <div class="nav-item px-3">
+                            <NavLink class="nav-link cursorStyle" @onclick="ShowAdminMenuContainer" href="javascript:void()">
+                                <span class="bi bi-person-circle fs-3 text-center" aria-hidden="true" style="margin-top:-2rem"></span>
+                                <span>Administração</span>
+                            </NavLink>
+                            <div class="nav-link p-2 text-white" style="margin-left:1 rem; visibility:@CssStyle">
+                                <ul class=" list-group">
+                                    <li style="list-style:none" class="cursorStyle">
+                                        <a class="nav-link p-2" @onclick="CityClicked">
+                                            <div class="hstack text-wrap">
+                                                <span class="bi bi-buildings-fill" aria-hidden="true" style="margin-top:-2rem"></span>
+                                                <span class="fs-6">Gerenciar Cidades</span>
+                                            </div>
+                                        </a>
+                                    </li>
+                                    <li style="list-style:none" class="cursorStyle">
+                                        <a class="nav-link p-2" @onclick="AirportClicked">
+                                            <div class="hstack text-wrap">
+                                                <span class="bi bi-building-fill" aria-hidden="true" style="margin-top:-2rem"></span>
+                                                <span class="fs-6">Gerenciar Aeroportos</span>
+                                            </div>
+                                        </a>
+                                    </li>
+                                    <li style="list-style:none" class="cursorStyle">
+                                        <a class="nav-link p-2" @onclick="FlightClicked">
+                                            <div class="hstack text-wrap">
+                                                <span class="bi bi-airplane-fill" aria-hidden="true" style="margin-top:-2rem"></span>
+                                                <span class="fs-6">Gerenciar Vôo</span>
+                                            </div>
+                                        </a>
+                                    </li>
+                                    <li style="list-style:none" class="cursorStyle">
+                                        <a class="nav-link p-2" @onclick="UserClicked">
+                                            <div class="hstack text-wrap">
+                                                <span class="bi bi-person-fill" aria-hidden="true" style="margin-top:-2rem"></span>
+                                                <span class="fs-6">Gerenciar Usuários</span>
+                                            </div>
+                                        </a>
+                                    </li>
+                                </ul>
+
+                            </div>
+                        </div>
+                        @* <div class="nav-item px-3" style="margin-left:1.5rem; visibility:@CssStyle">
+                        <NavLink class="nav-link" onclick="ShowCityContainer">
                         <span class="bi bi-buildings-fill" aria-hidden="true"></span> Gerenciar Cidades
-                    </NavLink>
-                </div>
-                <div class="nav-item px-3" style="margin-left:1.5rem; visibility:@CssStyle">
-                    <NavLink class="nav-link" href="/aeroportos">
+                        </NavLink>
+                        </div>
+                        <div class="nav-item px-3" style="margin-left:1.5rem; visibility:@CssStyle">
+                        <NavLink class="nav-link" href="/aeroportos">
                         <span class="bi bi-building-fill" aria-hidden="true"></span> Gerenciar Aeroportos
-                    </NavLink>
-                </div>
-                <div class="nav-item px-3" style="margin-left:1.5rem; visibility:@CssStyle">
-                    <NavLink class="nav-link" href="/voos">
+                        </NavLink>
+                        </div>
+                        <div class="nav-item px-3" style="margin-left:1.5rem; visibility:@CssStyle">
+                        <NavLink class="nav-link" href="/voos">
                         <span class="bi bi-airplane-fill" aria-hidden="true"></span> Gerenciar Voos
-                    </NavLink>
-                </div>
-                <div class="nav-item px-3" style="margin-left:1.5rem; visibility:@CssStyle">
-                    <NavLink class="nav-link" href="/passagens">
+                        </NavLink>
+                        </div>
+                        <div class="nav-item px-3" style="margin-left:1.5rem; visibility:@CssStyle">
+                        <NavLink class="nav-link" href="/passagens">
                         <span class="bi bi-ticket-detailed-fill" aria-hidden="true"></span> Gerenciar Passageiros
-                    </NavLink>
-                </div>
-                <div class="nav-item px-3" style="margin-left:1.5rem; visibility:@CssStyle">
-                    <NavLink class="nav-link" href="/bagagens">
+                        </NavLink>
+                        </div>
+                        <div class="nav-item px-3" style="margin-left:1.5rem; visibility:@CssStyle">
+                        <NavLink class="nav-link" href="/bagagens">
                         <span class="bi bi-suitcase2-fill" aria-hidden="true"></span> Gerenciar Bagagens
-                    </NavLink>
-                </div>
-                <div class="nav-item px-3" style="margin-left:1.5rem; visibility:@CssStyle">
-                    <NavLink class="nav-link" href="/users">
-                        <span class="bi bi-person-fill-gear" aria-hidden="true"></span> Gerenciar Usuários
-                    </NavLink>
-                </div>
+                        </NavLink>
+                        </div>
+                        *@
+                       
+                    </Authorized>
+                </AuthorizeView>
                 <div class="nav-item px-3" style="bottom:0; position:absolute;">
                     <NavLink class="nav-link" onclick="LogoutClicked">
                         <span class="btn btn-none text-danger" @onclick="LogoutClicked"><i class="bi bi-box-arrow-left"></i> Logout</span>
                     </NavLink>
                 </div>
-            </nav>            
+            </nav>
         </div>
     </Authorized>
 </AuthorizeView>
+
+<style>
+    .cursorStyle {
+        cursor: pointer;
+    }
+</style>
+
 @code {
     public string CssStyle = "hidden";
     public bool ShowHide { get; set; } = false;
     private void ShowAdminMenuContainer()
     {
         ShowHide = !ShowHide;
-        if(ShowHide)
+        if (ShowHide)
         {
             CssStyle = "visible";
         }
@@ -98,4 +143,14 @@
         await customAuthStateProvider.UpdateAuthenticationState(logoutModel);
         NavManager.NavigateTo("/", forceLoad: true);
     }
+
+    void CityClicked() => allState.CityClicked();
+    void AirportClicked() => allState.AirportClicked();
+    void BaggageClicked() => allState.BaggageClicked();
+    void FlightClassClicked() => allState.FlightClassClicked();
+    void FlightClicked() => allState.FlightClicked();
+    void PassengerClicked() => allState.PassengerClicked();
+    void TicketClicked() => allState.TicketClicked();
+    void UserClicked() => allState.UserClicked();
+
 }

@@ -1,0 +1,77 @@
+﻿<SfDialog Width="280px" IsModal="true" ShowCloseIcon="true" @bind-Visible="IsVisible">
+
+    <DialogEvents OnOpen="OpenDialog"></DialogEvents>
+
+    <DialogTemplates>
+        <Header> Atualizar Usuário</Header>
+        <Content>
+            <EditForm Model="User" Enhance OnSubmit="Save">
+                 <div class="card border-success">
+                     <div class="card-body">
+                         <div class="form-group">
+                             <label class="form-label">Nome</label>
+                             <InputText @bind-Value="User.Name" class="form-control" disabled/>
+                         </div>
+                         <div class="form-group">
+                             <label class="form-label">Email</label>
+                             <InputText @bind-Value="User.Email" class="form-control" disabled />
+                         </div>
+                         <div class="form-group mt-3 mb-3">
+                             <SfDropDownList TValue="string" TItem="SystemRole" Placeholder="Selecionar função" DataSource="SystemRoles">
+                                 <DropDownListFieldSettings Value="Name" Text="Name"></DropDownListFieldSettings>
+                                 <DropDownListEvents TValue="string" TItem="SystemRole" ValueChange="OnValueChange"></DropDownListEvents>
+                             </SfDropDownList>
+                         </div>
+                     </div>
+                 </div>
+
+            </EditForm>
+        </Content>
+    </DialogTemplates>
+    <DialogButtons>
+        <DialogButton Content="Salvar" Type="Syncfusion.Blazor.Popups.ButtonType.Submit" IsPrimary="true" OnClick="Save" />
+    </DialogButtons>
+</SfDialog>
+
+
+@code {
+    [Parameter] public ManageUser ManageUser { get; set; } = new();
+    [Parameter] public List<SystemRole> SystemRoles { get; set; } = new();
+    [Parameter] public EventCallback<ManageUser> HandleSaveOperationEvent { get; set; }
+    public ManageUser User { get; set; } = new();
+    public List<SystemRole> Roles { get; set; } = new();
+
+    private bool IsVisible { get; set; } = false;
+
+    async void Save()
+    {
+        if (string.IsNullOrEmpty(User.Name) || string.IsNullOrEmpty(User.Role))
+        {
+            await DialogService.AlertAsync("Você precisa definir o tipo de usuário");
+        }
+        else{
+            await HandleSaveOperationEvent.InvokeAsync(User);
+        }
+    }
+
+
+    public void OpenDialog()
+    {
+        IsVisible = true;
+        StateHasChanged();
+    }
+
+    protected override void OnParametersSet()
+    {
+        base.OnParametersSet();
+        User = ManageUser;
+        Roles = SystemRoles;
+        allState.Action += StateHasChanged;
+    }
+
+    public void OnValueChange(ChangeEventArgs<string, SystemRole> args)
+    {
+        User.Role = args.Value.ToString();
+    }
+
+}

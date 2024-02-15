@@ -18,7 +18,7 @@ namespace ServerLibrary.Repositories.Implementations
             return Success();
         }
 
-        public async Task<List<Airport>> GetAll() => await appDbContext.Airports.ToListAsync();
+        public async Task<List<Airport>> GetAll() => await appDbContext.Airports.AsNoTracking().Include(c => c.City).ToListAsync();
 
         public async Task<Airport> GetById(int id) => await appDbContext.Airports.FindAsync(id);
 

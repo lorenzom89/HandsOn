@@ -18,7 +18,8 @@ namespace ServerLibrary.Repositories.Implementations
             return Success();
         }
 
-        public async Task<List<Flight>> GetAll() => await appDbContext.Flights.ToListAsync();
+        public async Task<List<Flight>> GetAll() => await appDbContext.Flights.AsNoTracking().Include(a => a.OriginAirport).Include(a => a.DestinyAirport)
+            .Include(a => a.OriginAirport!.City).Include(a => a.DestinyAirport!.City).ToListAsync();
 
         public async Task<Flight> GetById(int id) => await appDbContext.Flights.FindAsync(id);
 
@@ -26,6 +27,13 @@ namespace ServerLibrary.Repositories.Implementations
         public async Task<GeneralResponse> Insert(Flight item)
         {
             if (!await CheckSearchCode(item.SearchCode!)) return new GeneralResponse(false, "Vôo já cadastrado");
+            item.FlightTime = item.FlightTime.ToUniversalTime();
+            var equalAirport = await CheckAirportCity(item);
+            if (equalAirport) return SameAirportCity();
+            if (CheckFlightTime(item))return InvalidFlightTime();
+
+            item.OriginAirport = null; 
+            item.DestinyAirport = null;
             appDbContext.Flights.Add(item);
             await Commit();
             return Success();
@@ -35,14 +43,23 @@ namespace ServerLibrary.Repositories.Implementations
         {
             var flight = await appDbContext.Flights.FindAsync(item.Id);
             if (flight is null) return NotFound();
+            var equalAirport = await CheckAirportCity(flight);
+            if (equalAirport)
+                return SameAirportCity();
+            if (CheckFlightTime(flight))
+                return InvalidFlightTime();
+
 
             flight.SearchCode = item.SearchCode;
             flight.OriginAirportId = item.OriginAirportId;
             flight.DestinyAirportId = item.DestinyAirportId;
-            flight.FlightTime = item.FlightTime;
+            flight.FlightTime = item.FlightTime.ToUniversalTime();
             await Commit();
             return Success();
         }
+
+        private static GeneralResponse SameAirportCity() => new(false, "Aeroportos de Origem e Destino não podem ser da mesma cidade");
+        private static GeneralResponse InvalidFlightTime() => new(false, "O horário do vôo não pode ser anterior ao horário atual");
 
         private static GeneralResponse NotFound() => new(false, "Desculpe, Vôo não encontrado");
         private static GeneralResponse Success() => new(true, "Processo concluído");
@@ -52,6 +69,18 @@ namespace ServerLibrary.Repositories.Implementations
         {
             var item = await appDbContext.Flights.FirstOrDefaultAsync(x => x.SearchCode!.ToLower().Equals(searchCode.ToLower()));
             return item is null;
+        }
+
+        private async Task<bool> CheckAirportCity(Flight flight)
+        {
+            var originAirport = await appDbContext.Airports.FirstOrDefaultAsync(x => x.Id!.Equals(flight.OriginAirportId));
+            var destinyAirport = await appDbContext.Airports.FirstOrDefaultAsync(x => x.Id!.Equals(flight.DestinyAirportId));
+            var isCityEqual = (originAirport!.CityId == destinyAirport!.CityId);
+            return isCityEqual;
+        }
+        private static bool CheckFlightTime(Flight flight)
+        {
+            return flight.FlightTime <= DateTime.UtcNow;
         }
     }
 }

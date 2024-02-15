@@ -151,5 +151,57 @@ namespace ServerLibrary.Repositories.Implementations
             await appDbContext.SaveChangesAsync();
             return new LoginResponse(true, "Token refreshed successfully", jwtToken, refreshToken);
         }
+
+        
+        
+        
+        
+        public async Task<List<ManageUser>> GetUsers()
+        {
+            var allUsers = await GetApplicationUsers();
+            var allUserRoles = await UserRoles();
+            var allRoles = await SystemRoles();
+
+            if (allUsers.Count == 0 || allRoles.Count == 0) return null!;
+
+            var users = new List<ManageUser>();
+            foreach (var user in allUsers)
+            {
+                var userRole = allUserRoles.FirstOrDefault(u => u.PersonId == user.Id);
+                var roleName = allRoles.FirstOrDefault(r => r.Id == userRole!.RoleId);
+                users.Add(new ManageUser() { UserId = user.Id, Name = user.Fullname!, Email = user.Email!, Role = roleName!.Name!});
+            }
+            return users;
+
+        }
+
+        public async Task<GeneralResponse> UpdateUser(ManageUser user)
+        {
+            var getRole = (await SystemRoles()).FirstOrDefault(r => r.Name!.Equals(user.Role));
+            var userRole = await appDbContext.UserRoles.FirstOrDefaultAsync(u => u.PersonId == user.UserId);
+            userRole!.RoleId = getRole!.Id;
+            await appDbContext.SaveChangesAsync();
+            return new GeneralResponse(true, "Função do usuário atualizada com sucesso");
+
+        }
+
+        public async Task<List<SystemRole>> GetRoles() => await SystemRoles();
+        
+
+        public async Task<GeneralResponse> DeleteUser(int id)
+        {
+            var user = await appDbContext.ApplicationUsers.FirstOrDefaultAsync(u => u.Id == id);
+            appDbContext.ApplicationUsers.Remove(user);
+            await appDbContext.SaveChangesAsync();  
+            return new GeneralResponse(true, "Usuário deletado com sucesso");
+        }
+
+
+
+        private async Task<List<SystemRole>> SystemRoles() => await appDbContext.SystemRoles.AsNoTracking().ToListAsync();
+
+        private async Task<List<UserRole>> UserRoles() => await appDbContext.UserRoles.AsNoTracking().ToListAsync();
+
+        private async Task<List<ApplicationUser>> GetApplicationUsers() => await appDbContext.ApplicationUsers.AsNoTracking().ToListAsync();
     }
 }

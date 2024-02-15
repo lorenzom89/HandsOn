@@ -1,14 +1,14 @@
 ﻿@implements IDisposable
 
-@if (allState.ShowCity)
+@if (allState.ShowAirport)
 {
     <div class="container mt-5">
         <div class="row">
             <div class="col-lg-12">
                 <div class="card">
                     <div class="card-header">
-                        <h4 class="float-start">Cidade</h4>
-                        <button class="btn btn-outline-success float-end" @onclick="OpenDialog"><i class="bi bi-plus-circle-dotted"></i>Adicionar Cidade</button>
+                        <h4 class="float-start">Aeroportos</h4>
+                        <button class="btn btn-outline-success float-end" @onclick="OpenDialog"><i class="bi bi-plus-circle-dotted"></i>Adicionar Aeroporto</button>
                     </div>
                     <div class="card-header" style="max-height:580px; overflow-x:hidden; overflow-y:scroll">
                         <div class="card-body">
@@ -17,26 +17,25 @@
                                     <tr>
                                         <th scope="col">#</th>
                                         <th scope="col">Id</th>
-                                        <th scope="col">Nome</th>
-                                        <th scope="col">UF</th>
+                                        <th scope="col">Código IATA</th>
+                                        <th scope="col">Cidade</th>
                                         <th scope="col">Opções</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @if(Cities is not null)
+                                    @if (Airports is not null)
                                     {
                                         int count = 1;
-                                        foreach (var item in Cities)
+                                        foreach (var item in Airports)
                                         {
                                             <tr>
                                                 <th scope="row">@count</th>
                                                 <th>@item.Id</th>
-                                                <th>@item.Name</th>
-                                                <th>@item.UF</th>
+                                                <th>@item.CodIATA</th>
+                                                <th>@item.City!.Name</th>
                                                 <th>
-                                                    <i class="bi bi-pencil text-info" id="cursorStyle" @onclick="()=>EditClicked(item)"></i>
-                                                    <i class="bi bi-trash text-danger" id="cursorStyle" @onclick="()=>DeleteClicked(item)"></i>
- 
+                                                    <i class="bi bi-pencil text-info cursorStyle" @onclick="()=>EditClicked(item)"></i>
+                                                    <i class="bi bi-trash text-danger cursorStyle" @onclick="()=>DeleteClicked(item)"></i>
                                                 </th>
                                             </tr>
                                             count++;
@@ -44,9 +43,9 @@
                                     }
                                     else
                                     {
-                                            <tr>
-                                                <td colspan="4"><div class="alert alert-info text-center">Nenhuma cidade cadastrada ainda</div></td>
-                                            </tr>
+                                        <tr>
+                                            <td colspan="4"><div class="alert alert-info text-center">Nenhum aeroporto cadastrado ainda</div></td>
+                                        </tr>
                                     }
                                 </tbody>
                             </table>
@@ -57,78 +56,91 @@
         </div>
     </div>
 }
-<CityDialog @ref="cityDialog"
-            HandleSaveOperationEvent="HandleSaveOperationEvent"
-            Cidade="Cidade">
-</CityDialog>
+
+<AirportDialog @ref="airportDialog"
+               HandleSaveOperationEvent="HandleSaveOperationEvent"
+               Airport="Airport"
+               Cities="Cities">
+</AirportDialog>
 
 <style>
-    .cursorStyle{
-        cursor:pointer;
+    .cursorStyle {
+        cursor: pointer;
     }
 </style>
+
 @code {
 
-    CityDialog? cityDialog;
-    City Cidade = new();
+    AirportDialog? airportDialog;
+    Airport Airport = new();
     public string Title { get; set; } = "Adicionar";
+    public List<Airport> Airports { get; set; } = new();
     public List<City> Cities { get; set; } = new();
 
     protected async override Task OnInitializedAsync()
     {
+        await GetAirports();
         await GetCities();
         allState.Action += StateHasChanged;
     }
+
     void OpenDialog()
     {
-        cityDialog?.OpenDialog();
+        airportDialog?.OpenDialog();
+    }
+
+    private async Task GetAirports()
+    {
+        Airports = await airportService.GetAll(Constants.AirportBaseUrl);
     }
     private async Task GetCities()
     {
         Cities = await cityService.GetAll(Constants.CityBaseUrl);
     }
-
-    //Add or Update
-    private async Task HandleSaveOperationEvent(City cidade)
+    // Add or Update
+    private async Task HandleSaveOperationEvent(Airport airport)
     {
         bool successCheck = false;
-        if (cidade.Id > 0)
+        if (airport.Id > 0)
         {
-            var result = await cityService.Update(cidade, Constants.CityBaseUrl);
+            var result = await airportService.Update(airport, Constants.AirportBaseUrl);
             successCheck = await DisplayMessage(result.Flag, result.Message);
         }
         else
         {
-            var result = await cityService.Insert(cidade, Constants.CityBaseUrl);
+            var result = await airportService.Insert(airport, Constants.AirportBaseUrl);
             successCheck = await DisplayMessage(result.Flag, result.Message);
         }
         if (successCheck)
         {
-            Cidade = new();
+            Airport = new();
+            await GetAirports();
             await GetCities();
-            cityDialog?.ChangeTitle("Adicionar");
+            airportDialog?.ChangeTitle("Adicionar");
         }
     }
-    //Edit
-    private void EditClicked(City city)
+
+    // Edit
+    private void EditClicked(Airport airport)
     {
-        cityDialog?.ChangeTitle("Atualizar");
-        Cidade = city;
+        airportDialog?.ChangeTitle("Atualizar");
+        Airport = airport;
         OpenDialog();
     }
-    //Delete
-    private async void DeleteClicked(City city)
+
+    // Delete
+    private async void DeleteClicked(Airport airport)
     {
-        bool confirm = await DialogService.ConfirmAsync($"Tem certeza que deseja deletar {city.Name} - {city.UF}?", "Confirmação");
+        bool confirm = await DialogService.ConfirmAsync($"Tem certeza que deseja deletar o aeroporto com código IATA {airport.CodIATA}?", "Confirmação");
         if (!confirm) return;
 
-        var response = await cityService.DeleteById(city.Id, Constants.CityBaseUrl);
-        if (await DisplayMessage(response.Flag, response.Message)) 
-            await GetCities();
+        var response = await airportService.DeleteById(airport.Id, Constants.AirportBaseUrl);
+        if (await DisplayMessage(response.Flag, response.Message))
+            await GetAirports();
     }
 
     private async Task<bool> DisplayMessage(bool flag, string message)
-    { 
+    {
         if (flag)
         {
             await DialogService.AlertAsync(message, "Sucesso");
@@ -146,5 +158,3 @@
         allState.Action -= StateHasChanged;
     }
 }
-
-

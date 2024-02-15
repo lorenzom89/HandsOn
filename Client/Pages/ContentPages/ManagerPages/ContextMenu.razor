@@ -1,0 +1,57 @@
+﻿<SfDialog Width="100px" IsModal="true" ShowCloseIcon="true" @bind-Visible="IsVisible">
+    <DialogEvents OnOpen="OpenContextMenu"> </DialogEvents>
+    <DialogTemplates>
+        <Header> Menu de controle</Header>
+        <Content>
+            <div class="hstak gap-2 mb-2" @onclick="ManageFlightClassClicked">
+                <i class="bi-ticket-detailed-fill text-success"></i>
+                <span class="cursorStyle text-success">Gerenciar Classes de Vôo</span>
+            </div>
+            <div class="hstak gap-2 mb-2" @onclick="ManagePassengerClicked">
+                <i class="bi bi-person-badge-fill text-primary"></i>
+                <span class="cursorStyle text-primary">Gerenciar Passageiros</span>
+            </div>
+        </Content>
+    </DialogTemplates>
+</SfDialog>
+
+<style>
+    .cursorStyle {
+        cursor: pointer;
+    }
+</style>
+
+@code {
+    private bool IsVisible { get; set; } = false;
+    [Parameter] public Flight SelectedFlight { get; set; } = new();
+    [Parameter] public EventCallback<Flight> HandleManageFlightClassClicked { get; set; }
+    [Parameter] public EventCallback<Flight> HandleManagePassengersClicked { get; set; }
+
+    public Flight Flight { get; set; } = new();
+
+    public void OpenContextMenu()
+    {
+        IsVisible = true;
+        StateHasChanged();
+    }
+
+    public void CloseContextMenu()
+    {
+        IsVisible = false;
+        Flight = new();
+        StateHasChanged();
+    }
+
+    private async Task ManageFlightClassClicked()
+    {
+        Flight = SelectedFlight;
+        await HandleManageFlightClassClicked.InvokeAsync(Flight);
+        CloseContextMenu();
+    }
+    private async Task ManagePassengerClicked()
+    {
+        Flight = SelectedFlight;
+        await HandleManagePassengersClicked.InvokeAsync(Flight);
+        CloseContextMenu();
+    }
+}

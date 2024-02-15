@@ -1,0 +1,176 @@
+﻿<SfDialog Width="450px" IsModal="true" ShowCloseIcon="true" @bind-Visible="IsVisible">
+
+    <DialogEvents OnOpen="OpenDialog"></DialogEvents>
+
+    <DialogTemplates>
+        <Header>@Title Informações do Passageiro</Header>
+        <Content>
+            <EditForm Model="Ticket" OnSubmit="Save">
+                <div class="card border-success">
+                    <div class="card-body">
+                        <div class="form-group">
+
+                            <label class="form-label">Código de busca</label>
+                            <InputText @bind-Value="Ticket.SearchCode" class="form-control" @onfocusout=@(() => CheckExistingTicket()) />
+                                                    
+                            <label class="form-label">CPF</label>
+                            <InputText @bind-Value="Passenger.CPF" class="form-control" @onfocusout=@(() => CheckExistingPassenger()) />
+
+                            <label class="form-label">Nome completo</label>
+                            <InputText @bind-Value="Passenger.Name" class="form-control" />
+
+                            <label class="form-label">Data de nascimento</label>
+                            <SfDatePicker @bind-Value="Passenger.DateOfBirth" Placeholder="Select date" class="form-control"></SfDatePicker>
+
+                            <label class="form-label">Email</label>
+                            <InputText @bind-Value="Passenger.Email" class="form-control" />
+
+
+                            <label class="form-label">Assento selecionado</label>
+                            <InputText @bind-Value="Ticket.Seat" class="form-control" />
+
+                            <label class="form-label">Flight Class</label>
+                            <SfDropDownList TValue="int" TItem="FlightClass" Placeholder="Select flight class" DataSource="FlightClasses">
+                                <DropDownListFieldSettings Value="Id" Text="Name"></DropDownListFieldSettings>
+                                <DropDownListEvents TValue="int" TItem="FlightClass" ValueChange="OnFlightClassChange"></DropDownListEvents>
+                            </SfDropDownList>
+
+                            <label class="form-label">Possui Bagagem:</label>
+                            <InputCheckbox @bind-Value="Ticket.Baggage"></InputCheckbox>
+
+                            
+
+                            
+
+                        </div>
+                    </div>
+                </div>
+            </EditForm>
+        </Content>
+    </DialogTemplates>
+
+    <DialogButtons>
+        <DialogButton Content="Save" Type="Syncfusion.Blazor.Popups.ButtonType.Submit" IsPrimary="true" OnClick="Save" />
+    </DialogButtons>
+
+</SfDialog>
+
+@code {
+    [Parameter] public Flight? SelectedFlight { get; set; } = new();
+    [Parameter] public List<Ticket> TicketsList { get; set; } = new();
+    [Parameter] public Ticket TicketParam { get; set; } = new();
+    [Parameter] public List<FlightClass> FlightClasses { get; set; } = new();
+    [Parameter] public List<Passenger> PassengersList { get; set; } = new();
+
+    [Parameter] public EventCallback<Passenger> HandleSavePassengerOperationEvent { get; set; }
+    [Parameter] public EventCallback<Ticket> HandleSaveTicketOperationEvent { get; set; }
+
+
+    public Ticket Ticket { get; set; } = new();
+    private List<FlightClass> FlightClassesList { get; set; } = new();
+    private Flight Flight { get; set; } = new();
+    private bool IsVisible { get; set; } = false;
+    public string Title = "Adicionar";
+
+    private Passenger Passenger { get; set; } = new();
+
+    public void OpenDialog()
+    {
+        IsVisible = true;
+        StateHasChanged();
+    }
+
+    protected override void OnParametersSet()
+    {
+        base.OnParametersSet();
+        Flight = SelectedFlight;
+        FlightClassesList = FlightClasses;
+        Ticket = TicketParam;
+        allState.Action += StateHasChanged;
+    }
+
+    private void CheckExistingPassenger()
+    {
+        if(PassengersList is not null)
+        {
+            var passenger = PassengersList.Find(p=> p.CPF == Passenger.CPF);
+            if (passenger is not null)
+            {
+                Passenger = passenger;
+                StateHasChanged();
+            }
+        }
+    }
+
+    private void CheckExistingTicket()
+    {
+        if (TicketsList is not null)
+        {
+            var ticket = TicketsList.Find(t => t.SearchCode == Ticket.SearchCode);
+            if (ticket is not null)
+            {
+                Ticket = ticket;
+                Passenger = ticket.Passenger;
+                StateHasChanged();
+            }
+        }
+    }
+
+    private async void Save()
+    {
+        if (string.IsNullOrEmpty(Passenger.CPF))
+            await DialogService.AlertAsync("O CPF do passageiro deve ser preenchido", "Atenção!");
+
+        else if (string.IsNullOrEmpty(Passenger.Name))
+            await DialogService.AlertAsync("O Nome do passageiro deve ser preenchido", "Atenção!");
+
+        else if (string.IsNullOrEmpty(Passenger.Email))
+            await DialogService.AlertAsync("O Email do passageiro deve ser preenchido", "Atenção!");
+
+        else if (string.IsNullOrEmpty(Ticket.Seat))
+            await DialogService.AlertAsync("O Assento deve ser preenchido", "Atenção!");
+
+        else if (string.IsNullOrEmpty(Ticket.SearchCode))
+            await DialogService.AlertAsync("O Código de Busca deve ser preenchido", "Atenção!");
+        else
+        {
+            Ticket.FlightId = SelectedFlight.Id;
+            Ticket.Passenger = Passenger;
+            Console.WriteLine($"{Ticket.Id}, {Ticket.FlightId}, {Ticket.Passenger?.Name}");
+            //await HandleSavePassengerOperationEvent.InvokeAsync(Passenger);
+            //Ticket.PassengerId = Passenger.Id;
+            Ticket.TotalPrice = Ticket.Baggage ? (getPrice(Ticket.FlightClassId) * 1.1) : getPrice(Ticket.FlightClassId);
+            await HandleSaveTicketOperationEvent.InvokeAsync(Ticket);
+            ClosePassengerDialog();
+        }
+
+    }
+    public void ClosePassengerDialog()
+    {
+        IsVisible = false;
+        //FlightClassesList = [];
+        //Passenger = new(); 
+        //Ticket = new() 
+        StateHasChanged();
+    }
+
+    public void ChangeTitle(string title)
+    {
+        Title = title;
+    }
+
+    public double getPrice(int flightClassId)
+    {
+        if(FlightClassesList is not null)
+        {
+            var flightClass = FlightClassesList.Find(f => f.Id == flightClassId);
+            return flightClass.SeatPrice;
+        }
+        else return 0.00;
+    }
+
+    public void OnFlightClassChange(ChangeEventArgs<int, FlightClass> args)
+    {
+        Ticket.FlightClassId = args.Value;
+    }
+}

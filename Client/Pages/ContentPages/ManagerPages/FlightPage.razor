@@ -1,0 +1,235 @@
+﻿
+@implements IDisposable
+
+@if (allState.ShowFlight)
+{    
+    <div class="container mt-5">
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h4 class="float-start">Voos</h4>
+                        <button class="btn btn-outline-success float-end" @onclick="OpenDialog"><i class="bi bi-plus-circle-dotted"></i>Adicionar Voo</button>
+                    </div>
+                    <div class="card-header" style="max-height:580px; overflow-x:hidden; overflow-y:scroll">
+                        <div class="card-body">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">#</th>
+                                        <th scope="col">Código do Vôo</th>
+                                        <th scope="col">Origem</th>
+                                        <th scope="col">Destino</th>
+                                        <th scope="col">Horário do Voo</th>
+                                        <th scope="col">Opções</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @if (Flights is not null)
+                                    {
+                                        int count = 1;
+                                        foreach (var item in Flights)
+                                        {
+                                            <tr>
+                                                <th scope="row">@count</th>
+                                                <th>@item.SearchCode</th>
+                                                <th>@Airports.Find(c => c.Id == @item.OriginAirportId)?.CodIATA - @Airports.Find(c => @item.OriginAirportId == c.Id)?.City!.Name</th>
+                                                <th>@Airports.Find(c => c.Id == @item.DestinyAirportId)?.CodIATA - @Airports.Find(c => @item.DestinyAirportId == c.Id)?.City!.Name</th>
+                                                <th>@item.FlightTime.ToString("dd/MM/yyyy HH:mm") </th>
+                                                <th>
+                                                    <i class="bi bi-pencil text-info cursorStyle" @onclick="()=>EditClicked(item)"></i>
+                                                    <i class="bi bi-trash text-danger cursorStyle" @onclick="()=>DeleteClicked(item)"></i>
+                                                    <i class="bi bi-menu-down text-primary" id="cursorStyle" @onclick="()=>ShowMenuPopUp(item)"></i>
+                                                </th>
+                                            </tr>
+                                            count++;
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <tr>
+                                            <td colspan="7"><div class="alert alert-info text-center">Nenhum voo cadastrado ainda</div></td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table> 
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>  
+}
+
+<FlightDialog @ref="flightDialog"
+              HandleSaveOperationEvent="HandleSaveOperationEvent"
+              Flight="Flight"
+              Airports="Airports">
+</FlightDialog>
+<ContextMenu @ref="contextMenu" 
+             HandleManageFlightClassClicked="ManageFlightClassClicked" 
+             SelectedFlight="SelectedFlight"
+             HandleManagePassengersClicked="ManagePassengersClicked" />
+            @* HandleManageBaggageClicked="ManageBaggageClicked"  *@
+@if(ShowFlightClass){
+<FlightClassPage @ref="flightClassPage"
+                 SelectedFlight="SelectedFlight"/>
+}
+@if (ShowPassengers)
+{
+    <PassengerPage @ref="passengerPage"
+                     SelectedFlight="SelectedFlight" />
+}
+<style>
+    .cursorStyle {
+        cursor: pointer;
+    }
+</style>
+
+@code {
+    FlightDialog? flightDialog;
+
+
+    Flight Flight = new();
+    public string Title { get; set; } = "Adicionar";
+    public List<Flight> Flights { get; set; } = new();
+    public List<Airport> Airports { get; set; } = new();
+
+    private bool ShowFlightMain { get; set; } = true;
+    private bool ShowFlightClass { get; set; } = false;
+    private bool ShowPassengers { get; set; } = false;
+
+    protected async override Task OnInitializedAsync()
+    {
+        await GetFlights();
+        await GetAirports();
+        allState.Action += StateHasChanged;
+    }
+
+    void OpenDialog()
+    {
+        flightDialog?.OpenDialog();
+    }
+
+    private async Task GetFlights()
+    {
+        Flights = await flightService.GetAll(Constants.FlightBaseUrl);
+    }
+
+    private async Task GetAirports()
+    {
+        Airports = await airportService.GetAll(Constants.AirportBaseUrl);
+    }
+
+    // Add or Update
+    private async Task HandleSaveOperationEvent(Flight flight)
+    {
+        bool successCheck = false;
+        if (flight.Id > 0)
+        {
+            var result = await flightService.Update(flight, Constants.FlightBaseUrl);
+            successCheck = await DisplayMessage(result.Flag, result.Message);
+        }
+        else
+        {
+            var result = await flightService.Insert(flight, Constants.FlightBaseUrl);
+            successCheck = await DisplayMessage(result.Flag, result.Message);
+        }
+        if (successCheck)
+        {
+            Flight = new();
+            await GetFlights();
+            await GetAirports();
+            flightDialog?.ChangeTitle("Adicionar");
+        }
+    }
+
+    // Edit
+    private void EditClicked(Flight flight)
+    {
+        flightDialog?.ChangeTitle("Atualizar");
+        Flight = flight;
+        OpenDialog();
+    }
+
+    // Delete
+    private async void DeleteClicked(Flight flight)
+    {
+        bool confirm = await DialogService.ConfirmAsync($"Tem certeza que deseja deletar o voo com código de busca {flight.SearchCode}?", "Confirmação");
+        if (!confirm) return;
+
+        var response = await flightService.DeleteById(flight.Id, Constants.FlightBaseUrl);
+        if (await DisplayMessage(response.Flag, response.Message))
+            await GetFlights();
+    }
+
+    private async Task<bool> DisplayMessage(bool flag, string message)
+    {
+        if (flag)
+        {
+            await DialogService.AlertAsync(message, "Sucesso");
+            return true;
+        }
+        else
+        {
+            await DialogService.AlertAsync(message, "Atenção!");
+            return false;
+        }
+    }
+
+
+    //Context Menu
+    //Show Menu PopUp
+    ContextMenu? contextMenu;
+    public Flight SelectedFlight { get; set; } = new();
+    void ShowMenuPopUp(Flight flight)
+    {
+        SelectedFlight = new();
+        SelectedFlight = flight;
+        contextMenu!.OpenContextMenu();
+    }
+
+    // Flight Class
+    FlightClassPage? flightClassPage;
+    void ManageFlightClassClicked(Flight flight)
+    {
+        SelectedFlight = new();
+        SelectedFlight = flight;
+
+        ShowFlightMain = false;
+        ShowFlightClass = true;
+
+        StateHasChanged();
+        allState.FlightClassClicked();
+    }
+    
+    //Passengers
+    PassengerPage? passengerPage;
+    void ManagePassengersClicked(Flight flight)
+    {
+        SelectedFlight = new();
+        SelectedFlight = flight;
+
+        ShowFlightMain = false;
+        ShowPassengers = true;
+
+        StateHasChanged();
+        allState.PassengerClicked();
+
+    }
+    /*
+    //Baggage
+    private bool ShowBaggage { get; set; } = false;
+    void ManageBaggageClicked()
+    {
+        contextMenu!.CloseContextMenu();
+        ShowFlightMain = false;
+        allState.BaggageClicked();
+    }
+    */
+    //Dispose
+    public void Dispose()
+    {
+        allState.Action -= StateHasChanged;
+    }
+}

@@ -17,7 +17,7 @@ namespace ServerLibrary.Data.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "8.0.1")
+                .HasAnnotation("ProductVersion", "8.0.2")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -271,6 +271,10 @@ namespace ServerLibrary.Data.Migrations
                     b.Property<string>("Seat")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<double?>("TotalPrice")
+                        .IsRequired()
+                        .HasColumnType("double precision");
 
                     b.HasKey("Id");
 

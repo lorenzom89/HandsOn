@@ -183,6 +183,7 @@ namespace ServerLibrary.Data.Migrations
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     Seat = table.Column<string>(type: "text", nullable: false),
                     Baggage = table.Column<bool>(type: "boolean", nullable: false),
+                    TotalPrice = table.Column<double>(type: "double precision", nullable: false),
                     FlightId = table.Column<int>(type: "integer", nullable: false),
                     FlightClassId = table.Column<int>(type: "integer", nullable: false),
                     PassengerId = table.Column<int>(type: "integer", nullable: false),

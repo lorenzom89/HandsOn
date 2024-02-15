@@ -1,0 +1,147 @@
+﻿@implements IDisposable
+
+@if (allState.ShowTicket)
+{
+    <div class="container mt-5">
+        <div class="row mt-3">
+            <div class="col-lg-12">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="row">
+                            <div class="col-10">
+                                <input type="text" placeholder="CPF do Passageiro" @bind=CPF class="form-control" />
+                            </div>
+                            <div class="col-2">
+                                <button class="btn btn-primary text-white" @onclick=SearchTickets> 
+                                    <span class="bi bi-search text-white"></span>
+                                    <span> Buscar</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-header" style="max-height:580px; overflow-x:hidden; overflow-y:scroll">
+                        <h4 class="text-center">@Passenger.Name</h4>
+                        <div class="card-body">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">#</th>
+                                        <th scope="col">Codigo da Passagem</th>
+                                        <th scope="col">Numero do Voo</th>
+                                        <th scope="col">Origem x Destino</th>
+                                        <th scope="col">Assento</th>
+                                        <th scope="col">Classe</th>
+                                        <th scope="col">Possui Bagagem?</th>
+                                        <th scope="col">Opções</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @if (Tickets is not null)
+                                    {
+                                        int count = 1;
+                                        foreach (var item in Tickets)
+                                        {
+                                            <tr>
+                                                <th scope="row">@count</th>
+                                                <th>@item.SearchCode</th>
+                                                <th>@item.Flight?.SearchCode</th>
+                                                <th>@GetAirportCod(item)</th>
+                                                <th>@item.Seat</th>
+                                                <th>@item.FlightClass?.Name</th>
+                                                <th>@(@item.Baggage ? "Sim" : "Não")</th>
+                                                <th>
+                                                    <div class=" row">
+                                                        <div class="col-3" title="Gerar Cartão de Embarque"><span class="bi bi-ticket-fill cursorStyle" @onclick="()=>GenerateCheckIn(item)"/></div>
+                                                        @if(@item.Baggage){
+                                                            <div class="col-3" title="Gerar Etiqueta de Bagagem"><span class="bi bi-backpack-fill cursorStyle" @onclick="()=>GenerateBaggage(item)"/></div>
+                                                        }
+                                                    </div>
+                                                </th>
+                                            </tr>
+                                            count++;
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <tr>
+                                            <td colspan="6"><div class="alert alert-info text-center">Este passageiro não possui passagens para voos futuros</div></td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+@code {
+
+    public string CPF { get; set; } = string.Empty;
+
+    public List<Passenger> PassengerList { get; set; } = new();
+    public List<Ticket> Tickets { get; set; } = new();
+
+    public Passenger Passenger { get; set; } = new();
+
+    public List<Airport> Airports { get; set; } = new();
+
+    protected async override Task OnInitializedAsync()
+    {
+        Airports = await airportService.GetAll(Constants.AirportBaseUrl);
+        PassengerList = await passengerService.GetAll(Constants.PassengerBaseUrl);
+        allState.Action += StateHasChanged;
+    }
+
+    public async Task SearchTickets()
+    {
+        if (PassengerList is not null && PassengerList.Count > 0) 
+            Passenger = PassengerList.Find(p => p.CPF == CPF);
+        if (Passenger is not null)
+        {
+            var list = await ticketService.GetAll(Constants.TicketBaseUrl);
+            Tickets = list.FindAll(t => t.PassengerId == Passenger.Id && t.Flight!.FlightTime >= DateTime.UtcNow).ToList();
+            StateHasChanged();
+        }
+    }
+
+
+    public string GetAirportCod(Ticket ticket)
+    {
+        var origin = Airports.Find(a => a.Id == ticket.Flight!.OriginAirportId);
+        var destiny = Airports.Find(a => a.Id == ticket.Flight!.DestinyAirportId);
+        if (origin is not null && destiny is not null)
+            return $"[{origin.CodIATA}] {origin.City?.Name} - [{destiny.CodIATA}] {destiny.City?.Name}";
+        else
+            return "";
+    }
+
+
+    public async Task GenerateCheckIn(Ticket ticket)
+    {
+
+       
+    }
+
+    public async Task GenerateBaggage(Ticket ticket)
+    {
+
+        
+    }
+    public void GoBack()
+    {
+         CPF = string.Empty;
+        Passenger = new();
+        PassengerList = [];
+        Tickets = [];
+        StateHasChanged();
+    }
+
+
+    public void Dispose()
+    {
+        allState.Action -= StateHasChanged;
+    }
+
+}

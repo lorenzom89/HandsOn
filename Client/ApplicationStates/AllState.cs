@@ -68,6 +68,15 @@
             Action?.Invoke();
         }
 
+        //User
+        public bool ShowUser { get; set; }
+        public void UserClicked()
+        {
+            ResetAll();
+            ShowUser = true;
+            Action?.Invoke();
+        }
+
 
         public void ResetAll()
         {
@@ -78,6 +87,7 @@
             ShowFlightClass=false;
             ShowPassenger=false;
             ShowTicket = false;
+            ShowUser = false;
         }
 
     }

@@ -1,0 +1,115 @@
+﻿<SfDialog Width="350px" IsModal="true" ShowCloseIcon="true" @bind-Visible="IsVisible">
+
+    <DialogEvents OnOpen="OpenDialog"></DialogEvents>
+
+    <DialogTemplates>
+        <Header>@Title Voo</Header>
+        <Content>
+            <EditForm Model="Flight" OnSubmit="Save">
+                <div class="card border-success">
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label class="form-label">Código do Vôo</label>
+                            <InputText @bind-Value="Flight.SearchCode" class="form-control" />
+
+                            <label class="form-label">Aeroporto de Origem</label>
+                            @if (Flight.OriginAirport != null)
+                            {
+                                string selectedOrigin = Flight.OriginAirport.CodIATA;
+                                <SfDropDownList TValue="string" TItem="Airport" Placeholder="@selectedOrigin" DataSource="Airports">
+                                    <DropDownListFieldSettings Value="Id" Text="CodIATA"></DropDownListFieldSettings>
+                                    <DropDownListEvents TValue="string" TItem="Airport" ValueChange="OnOriginAirportChange"></DropDownListEvents>
+                                </SfDropDownList>
+                            }
+                            else
+                            {
+                                <SfDropDownList TValue="string" TItem="Airport" Placeholder="Selecione o aeroporto de origem" DataSource="Airports">
+                                    <DropDownListFieldSettings Value="Id" Text="CodIATA"></DropDownListFieldSettings>
+                                    <DropDownListEvents TValue="string" TItem="Airport" ValueChange="OnOriginAirportChange"></DropDownListEvents>
+                                </SfDropDownList>
+                            }
+
+                            <label class="form-label">Aeroporto de Destino</label>
+                            @if (Flight.DestinyAirport != null)
+                            {
+                                string selectedDestiny = Flight.DestinyAirport.CodIATA;
+                                <SfDropDownList TValue="string" TItem="Airport" Placeholder="@selectedDestiny" DataSource="Airports">
+                                    <DropDownListFieldSettings Value="Id" Text="CodIATA"></DropDownListFieldSettings>
+                                    <DropDownListEvents TValue="string" TItem="Airport" ValueChange="OnDestinyAirportChange"></DropDownListEvents>
+                                </SfDropDownList>
+                            }
+                            else
+                            {
+                                <SfDropDownList TValue="string" TItem="Airport" Placeholder="Selecione o aeroporto de destino" DataSource="Airports">
+                                    <DropDownListFieldSettings Value="Id" Text="CodIATA"></DropDownListFieldSettings>
+                                    <DropDownListEvents TValue="string" TItem="Airport" ValueChange="OnDestinyAirportChange"></DropDownListEvents>
+                                </SfDropDownList>
+                            }
+
+                            <label class="form-label">Horário do Voo</label>
+                            <SfDateTimePicker @bind-Value="Flight.FlightTime" Format="dd/MM/yyyy HH:mm" class="form-control"></SfDateTimePicker>
+                        </div>
+                    </div>
+                </div>
+            </EditForm>
+        </Content>
+    </DialogTemplates>
+
+    <DialogButtons>
+        <DialogButton Content="Salvar" Type="Syncfusion.Blazor.Popups.ButtonType.Submit" IsPrimary="true" OnClick="Save" />
+    </DialogButtons>
+
+</SfDialog>
+
+@code {
+    [Parameter] public Flight Flight { get; set; } = new();
+    [Parameter] public List<Airport> Airports { get; set; } = new();
+    [Parameter] public EventCallback<Flight> HandleSaveOperationEvent { get; set; }
+
+    private bool IsVisible { get; set; } = false;
+    public string Title = "Adicionar";
+
+    public void OpenDialog()
+    {
+        IsVisible = true;
+        StateHasChanged();
+    }
+
+    private async void Save()
+    {
+        if (string.IsNullOrEmpty(Flight.SearchCode))
+            await DialogService.AlertAsync("O Código de Busca do voo deve ser preenchido", "Atenção!");
+
+        else if (Flight.OriginAirportId <= 0)
+            await DialogService.AlertAsync("Selecione o aeroporto de origem do voo", "Atenção!");
+
+        else if (Flight.DestinyAirportId <= 0)
+            await DialogService.AlertAsync("Selecione o aeroporto de destino do voo", "Atenção!");
+
+        else if (Flight.FlightTime <= DateTime.Now)
+            await DialogService.AlertAsync("O horário do voo deve ser posterior ao horário atual", "Atenção!");
+
+        else
+        {
+            Flight.OriginAirport = Airports.Find(a => a.Id == Flight.OriginAirportId);
+            Flight.DestinyAirport = Airports.Find(a => a.Id == Flight.DestinyAirportId);
+            IsVisible = false;
+            await HandleSaveOperationEvent.InvokeAsync(Flight);
+        }
+    }
+
+    public void ChangeTitle(string title)
+    {
+        Title = title;
+    }
+
+    public void OnOriginAirportChange(ChangeEventArgs<string, Airport> args)
+    {
+        Flight.OriginAirportId = int.Parse(args.Value);
+    }
+
+    public void OnDestinyAirportChange(ChangeEventArgs<string, Airport> args)
+    {
+        Flight.DestinyAirportId = int.Parse(args.Value);
+    }
+}

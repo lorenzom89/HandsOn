@@ -1,0 +1,83 @@
+﻿<SfDialog Width="350px" IsModal="true" ShowCloseIcon="true" @bind-Visible="IsVisible">
+    <DialogEvents OnOpen="OpenDialog"></DialogEvents>
+
+    <DialogTemplates>
+        <Header>@Title Classe de Voo</Header>
+        <Content>
+            <EditForm Model="FlightClass" OnSubmit="Save">
+                <div class="card border-success">
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label class="form-label">Nome da Classe de Voo</label>
+                            <InputText @bind-Value="FlightClass.Name" class="form-control" />
+
+                            <label class="form-label">Quantidade de Assentos</label>
+                            <InputNumber @bind-Value="FlightClass.SeatQuantity" class="form-control" />
+
+                            <label class="form-label">Preço do Assento</label>
+                            <InputNumber @bind-Value="FlightClass.SeatPrice" class="form-control" />
+                        </div>
+                    </div>
+                </div>
+            </EditForm>
+        </Content>
+    </DialogTemplates>
+
+    <DialogButtons>
+        <DialogButton Content="Salvar" Type="Syncfusion.Blazor.Popups.ButtonType.Submit" IsPrimary="true" OnClick="Save" />
+    </DialogButtons>
+</SfDialog>
+
+@code {
+    [Parameter] public Flight? SelectedFlight { get; set; }
+    [Parameter] public FlightClass FlightClassParam { get; set; } = new();
+    [Parameter] public EventCallback<FlightClass> HandleSaveOperationEvent { get; set; }
+    public Flight Flight { get; set; } = new();
+    public FlightClass FlightClass { get; set; } = new();
+
+    private bool IsVisible { get; set; } = false;
+    public string Title = "Adicionar";
+
+    public void OpenDialog()
+    {
+        IsVisible = true;
+        StateHasChanged();
+    }
+    protected override void OnParametersSet()
+    {
+        base.OnParametersSet();
+        Flight = SelectedFlight;
+        FlightClass = FlightClassParam;
+        allState.Action += StateHasChanged;
+    }
+
+    private async void Save()
+    {
+        if (string.IsNullOrEmpty(FlightClass.Name))
+            await DialogService.AlertAsync("O Nome da classe de voo deve ser preenchido", "Atenção!");
+
+        else if (FlightClass.SeatQuantity <= 0)
+            await DialogService.AlertAsync("A quantidade de assentos deve ser maior que zero", "Atenção!");
+
+        else if (FlightClass.SeatPrice <= 0)
+            await DialogService.AlertAsync("O preço do assento deve ser maior que zero", "Atenção!");
+
+        else
+        {
+            FlightClass.FlightId = Flight.Id;
+            await HandleSaveOperationEvent.InvokeAsync(FlightClass);
+            CloseFlighClassDialog();
+        }
+    }
+    public void CloseFlighClassDialog()
+    {
+        IsVisible = false;
+        FlightClass = new();
+        StateHasChanged();
+    }
+
+    public void ChangeTitle(string title)
+    {
+        Title = title;
+    }
+}

@@ -1,0 +1,204 @@
+﻿@implements IDisposable
+
+@if (allState.ShowFlightClass)
+{
+    <div class="container mt-5 ">
+            <div class="row">
+                <div class="col-lg-12">
+                    <div class="card">
+                        <div class="card-header">
+                        <span class="nav-link bi bi-arrow-left-square-fill text-danger" @onclick="GoBack"> Voltar</span>
+                            <h4 class="float-start">Informações do Vôo</h4>
+                        </div>
+                        <div class="card-body">
+                            <p><strong>Código do Voo:</strong> @Flight?.SearchCode</p>
+                        <p><strong>Origem:</strong> @($"{Flight?.OriginAirport?.CodIATA} - {Flight?.OriginAirport?.City?.Name}")</p>
+                        <p><strong>Destino:</strong> @($"{Flight?.DestinyAirport?.CodIATA} - {Flight?.DestinyAirport?.City?.Name}")</p>
+
+                            <p><strong>Horário do Voo:</strong> @SelectedFlight?.FlightTime.ToString("dd/MM/yyyy HH:mm")</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row mt-3">
+                <div class="col-lg-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h4 class="float-start">Classes de Voo Associadas</h4>
+                            <button class="btn btn-outline-success float-end" @onclick="OpenDialog"><i class="bi bi-plus-circle-dotted"></i>Adicionar Classe de Voo</button>
+                        </div>
+                        <div class="card-header" style="max-height:580px; overflow-x:hidden; overflow-y:scroll">
+                            <div class="card-body">
+                                <table class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th scope="col">#</th>
+                                            <th scope="col">Nome</th>
+                                            <th scope="col">Quantidade de Assentos</th>
+                                            <th scope="col">Preço do Assento</th>
+                                            <th scope="col">Assentos Restantes</th>
+                                            <th scope="col">Opções</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @if (FlightClasses is not null)
+                                        {
+                                            int count = 1;
+                                            foreach (var item in FlightClasses)
+                                            {
+                                                <tr>
+                                                    <th scope="row">@count</th>
+                                                    <th>@item.Name</th>
+                                                    <th>@item.SeatQuantity</th>
+                                                    <th>@item.SeatPrice.ToString("C")</th>
+                                                    <th>@item.RemainingSeats</th>
+                                                    <th>
+                                                        <i class="bi bi-pencil text-info cursorStyle" @onclick="()=>EditClicked(item)"></i>
+                                                        <i class="bi bi-trash text-danger cursorStyle" @onclick="()=>DeleteClicked(item)"></i>
+                                                    </th>
+                                                </tr>
+                                                count++;
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <tr>
+                                                <td colspan="6"><div class="alert alert-info text-center">Nenhuma classe de voo cadastrada ainda</div></td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+}
+
+<FlightClassDialog @ref="flightClassDialog"
+                   HandleSaveOperationEvent="HandleSaveOperationEvent"
+                   SelectedFlight="Flight"
+                    FlightClassParam ="FlightClass">
+</FlightClassDialog>
+
+<style>
+    .cursorStyle {
+        cursor: pointer;
+    }
+</style>
+
+@code {
+
+    [Parameter] public Flight? SelectedFlight { get; set; } = new();
+    public Flight Flight { get; set; } = new();
+
+    public FlightClass FlightClass { get; set; } = new();
+
+    public List<FlightClass> FlightClasses { get; set; } = new();
+
+    FlightClassDialog? flightClassDialog; //Dialog Form
+    public string Title { get; set; } = "Adicionar";
+
+
+    protected async override Task OnInitializedAsync()
+    {
+        await GetFlightClasses();
+        allState.Action += StateHasChanged;
+    }
+
+    //Open new class form dialog
+    void OpenDialog()
+    {
+        flightClassDialog?.OpenDialog();
+    }
+
+    //Get Classes from selected flight 
+    private async Task GetFlightClasses()
+    {
+
+        if(SelectedFlight is not null)
+            Flight = SelectedFlight!;
+        var list = await flightClassService.GetAll(Constants.FlightClassBaseUrl);
+        FlightClasses = list.Where(c => c.FlightId == Flight.Id).ToList();
+    }
+
+    private void GoBack()
+    {
+        FlightClasses = [];
+        SelectedFlight = new();
+        StateHasChanged();
+        Dispose();
+        allState.FlightClicked();
+    }
+
+    protected async override void OnParametersSet()
+    {
+        base.OnParametersSet();
+        await GetFlightClasses();
+        allState.Action += StateHasChanged;
+    }
+
+
+
+    // Add or Update
+    private async Task HandleSaveOperationEvent(FlightClass flightClass)
+    {
+        bool successCheck = false;
+        if (flightClass.Id > 0)
+        {
+            var result = await flightClassService.Update(flightClass, Constants.FlightClassBaseUrl);
+            successCheck = await DisplayMessage(result.Flag, result.Message);
+        }
+        else
+        {
+            var result = await flightClassService.Insert(flightClass, Constants.FlightClassBaseUrl);
+            successCheck = await DisplayMessage(result.Flag, result.Message);
+        }
+        if (successCheck)
+        {
+            await GetFlightClasses();
+            flightClassDialog?.ChangeTitle("Adicionar");
+        }
+    }
+
+    // Edit
+    private void EditClicked(FlightClass flightClass)
+    {
+        flightClassDialog?.ChangeTitle("Atualizar");
+        FlightClass = flightClass;
+        OpenDialog();
+    }
+
+    // Delete
+    private async void DeleteClicked(FlightClass flightClass)
+    {
+        bool confirm = await DialogService.ConfirmAsync($"Tem certeza que deseja deletar a classe de voo {flightClass.Name}?", "Confirmação");
+        if (!confirm) return;
+
+        var response = await flightClassService.DeleteById(flightClass.Id, Constants.FlightClassBaseUrl);
+        if (await DisplayMessage(response.Flag, response.Message))
+             await GetFlightClasses();
+    }
+
+    private async Task<bool> DisplayMessage(bool flag, string message)
+    {
+        if (flag)
+        {
+            await DialogService.AlertAsync(message, "Sucesso");
+            return true;
+        }
+        else
+        {
+            await DialogService.AlertAsync(message, "Atenção!");
+            return false;
+        }
+    }
+
+    public void Dispose()
+    {
+        allState.Action -= StateHasChanged;
+    }
+
+   
+}

@@ -1,3 +1,4 @@
+using BaseLibrary.DTOs;
 using BaseLibrary.Entities;
 using Blazored.LocalStorage;
 using Client;
@@ -44,5 +45,4 @@ builder.Services.AddScoped<AllState>();
 builder.Services.AddSyncfusionBlazor();
 builder.Services.AddScoped<SfDialogService>();
 
-builder.Services.AddBlazorBootstrap();
 await builder.Build().RunAsync();
