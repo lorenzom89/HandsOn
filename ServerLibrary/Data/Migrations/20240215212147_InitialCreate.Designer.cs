@@ -9,11 +9,11 @@ using ServerLibrary.Data;
 
 #nullable disable
 
-namespace ServerLibrary.Data.Migrations
+namespace ServerLibrary.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20240215063411_First")]
-    partial class First
+    [Migration("20240215212147_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -67,16 +67,11 @@ namespace ServerLibrary.Data.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<int?>("PassengerId")
-                        .HasColumnType("integer");
-
                     b.Property<string>("Password")
                         .IsRequired()
                         .HasColumnType("text");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("PassengerId");
 
                     b.ToTable("ApplicationUsers");
                 });
@@ -318,15 +313,6 @@ namespace ServerLibrary.Data.Migrations
                         .IsRequired();
 
                     b.Navigation("City");
-                });
-
-            modelBuilder.Entity("BaseLibrary.Entities.ApplicationUser", b =>
-                {
-                    b.HasOne("BaseLibrary.Entities.Passenger", "Passenger")
-                        .WithMany()
-                        .HasForeignKey("PassengerId");
-
-                    b.Navigation("Passenger");
                 });
 
             modelBuilder.Entity("BaseLibrary.Entities.Baggage", b =>
