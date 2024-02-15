@@ -1,0 +1,82 @@
+﻿@implements IDisposable
+
+@if (allState.ShowBagTag)
+{
+    <div class="container mt-5 ">
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="card border-success shadow-lg">
+                    <div class="card-header">
+                        <span class="float-start nav-link bi bi-arrow-left-square-fill text-danger" @onclick="GoBack"> Voltar</span>
+                        <h4 class="text-center">ETIQUETA DE BAGAGEM</h4>
+                        <div class="card-body">
+                            <div class="hpstack gap-2">
+                                <div class="vstack gap-3">
+
+                                    <table class="table border-danger">
+                                        <tbody>
+                                            <tr>
+                                                <td><h6 class="fw-bold">Codigo da Bagagem:</h6></td>
+                                                <td>@Baggage?.SearchCode</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public Ticket Ticket { get; set; } = new();
+
+    public Baggage Baggage { get; set; } = new();
+
+    public bool IsVisible { get; set; } = false;
+
+    protected async override Task OnInitializedAsync()
+    {
+        await GetBaggage();
+        allState.Action += StateHasChanged;
+    }
+    protected async override void OnParametersSet()
+    {
+        base.OnParametersSet();
+        await GetBaggage();
+        allState.Action += StateHasChanged;
+    }
+
+    private void GoBack()
+    {
+        Baggage = new();
+        StateHasChanged();
+        Dispose();
+        allState.TicketClicked();
+    }
+
+    private async Task GetBaggage()
+    {
+        if (Ticket.Baggage)
+        {
+            var list = await baggageService.GetAll(Constants.BaggageBaseUrl);
+            var baggage = list.Find(b => b.TicketId == Ticket.Id);
+            if (baggage is not null)
+            {
+                Baggage = baggage;
+                StateHasChanged();
+            }
+        }
+    }
+
+    public void Dispose()
+    {
+        allState.Action -= StateHasChanged;
+    }
+
+
+}
+

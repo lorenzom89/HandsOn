@@ -3,16 +3,13 @@
     <DialogEvents OnOpen="OpenDialog"></DialogEvents>
 
     <DialogTemplates>
-        <Header>@Title Informações do Passageiro</Header>
+        <Header>Comprar Passagem</Header>
         <Content>
             <EditForm Model="Ticket" OnSubmit="Save">
                 <div class="card border-success">
                     <div class="card-body">
                         <div class="form-group">
 
-                            <label class="form-label">Código de busca</label>
-                            <InputText @bind-Value="Ticket.SearchCode" class="form-control" @onfocusout=@(() => CheckExistingTicket()) />
-                                                    
                             <label class="form-label">CPF</label>
                             <InputText @bind-Value="Passenger.CPF" class="form-control" @onfocusout=@(() => CheckExistingPassenger()) />
 
@@ -27,22 +24,21 @@
 
 
                             <label class="form-label">Assento selecionado</label>
-                            <InputText @bind-Value="Ticket.Seat" class="form-control" />
-
+                            <InputText @bind-Value="Ticket.Seat" class="form-control" @onfocusout=@(() => CheckSeat()) />
+                             
+                            <div>
+                                <label class="form-label">Deseja despachar Bagagem?</label>
+                                <InputCheckbox @bind-Value="Ticket.Baggage" @onchange="()=>GetPrice()"></InputCheckbox>
+                            </div>
                             <label class="form-label">Classe do Vôo</label>
                             <SfDropDownList TValue="int" TItem="FlightClass" Placeholder="Selecione a classe do vôo" DataSource="FlightClasses">
                                 <DropDownListFieldSettings Value="Id" Text="Name"></DropDownListFieldSettings>
                                 <DropDownListEvents TValue="int" TItem="FlightClass" ValueChange="OnFlightClassChange"></DropDownListEvents>
                             </SfDropDownList>
 
-                            <label class="form-label">Possui Bagagem:</label>
-                            <InputCheckbox @bind-Value="Ticket.Baggage" @onchange="CheckBaggage"></InputCheckbox>
-
-
-                            <label class="form-label">Código de busca da bagagem</label>
-                            <InputText @bind-Value="Baggage.SearchCode" class="form-control" disabled="@(!Ticket.Baggage)" />
-                            
                         </div>
+                        <label class="form-label">Valor Total:</label>
+                        <InputNumber @bind-Value="Ticket.TotalPrice" class="form-control" step="0.01" disabled  />
                     </div>
                 </div>
             </EditForm>
@@ -58,23 +54,20 @@
 @code {
     [Parameter] public Flight? SelectedFlight { get; set; } = new();
     [Parameter] public List<Ticket> TicketsList { get; set; } = new();
-    [Parameter] public Ticket TicketParam { get; set; } = new();
-    [Parameter] public List<FlightClass> FlightClasses { get; set; } = new();
-    [Parameter] public List<Passenger> PassengersList { get; set; } = new();
+    [Parameter] public List<FlightClass> FlightClassesList { get; set; } = new();
 
     [Parameter] public EventCallback<Passenger> HandleSavePassengerOperationEvent { get; set; }
     [Parameter] public EventCallback<Ticket> HandleSaveTicketOperationEvent { get; set; }
 
 
     public Ticket Ticket { get; set; } = new();
-    private List<FlightClass> FlightClassesList { get; set; } = new();
+    private List<FlightClass> FlightClasses { get; set; } = new();
+    public List<Passenger> PassengersList { get; set; } = new();
     private Flight Flight { get; set; } = new();
-    private Baggage Baggage { get; set; } = new();
+    private Passenger Passenger { get; set; } = new();
+
 
     private bool IsVisible { get; set; } = false;
-    public string Title = "Adicionar";
-
-    private Passenger Passenger { get; set; } = new();
 
     public void OpenDialog()
     {
@@ -82,28 +75,26 @@
         StateHasChanged();
     }
 
-    public async Task CheckBaggage()
-    {
-        var list = await baggageService.GetAll(Constants.BaggageBaseUrl);
-        var baggage = list.Find(b => b.TicketId == Ticket.Id);
-        if (baggage is not null) Baggage = baggage;
-    }
-
     protected async override void OnParametersSet()
     {
         base.OnParametersSet();
         Flight = SelectedFlight;
-        FlightClassesList = FlightClasses;
-        Ticket = TicketParam;
-        await CheckBaggage();
+        FlightClasses = FlightClassesList.FindAll(f => f.FlightId == Flight?.Id);
+        await GetPassenger();
+
         allState.Action += StateHasChanged;
+    }
+
+    private async Task GetPassenger()
+    {
+        PassengersList = await passengerService.GetAll(Constants.PassengerBaseUrl);
     }
 
     private void CheckExistingPassenger()
     {
-        if(PassengersList is not null)
+        if (PassengersList is not null)
         {
-            var passenger = PassengersList.Find(p=> p.CPF == Passenger.CPF);
+            var passenger = PassengersList.Find(p => p.CPF == Passenger.CPF);
             if (passenger is not null)
             {
                 Passenger = passenger;
@@ -112,15 +103,29 @@
         }
     }
 
-    private void CheckExistingTicket()
+    private bool CheckExistingTicket()
     {
         if (TicketsList is not null)
         {
             var ticket = TicketsList.Find(t => t.SearchCode == Ticket.SearchCode);
             if (ticket is not null)
             {
-                Ticket = ticket;
-                Passenger = ticket.Passenger;
+                return true;
+            }
+            else return false;
+        }
+        else return false;
+    }
+
+    private async void CheckSeat()
+    {
+        if (TicketsList is not null)
+        {
+            var ticket = TicketsList.Find(t => t.Seat == Ticket.Seat);
+            if (ticket is not null)
+            {
+                await DialogService.AlertAsync("O Assento selecionado não está disponivel. Por favor, selecione outro", "Atenção!");
+                Ticket.Seat = string.Empty;
                 StateHasChanged();
             }
         }
@@ -140,19 +145,38 @@
         else if (string.IsNullOrEmpty(Ticket.Seat))
             await DialogService.AlertAsync("O Assento deve ser preenchido", "Atenção!");
 
-        else if (string.IsNullOrEmpty(Ticket.SearchCode))
-            await DialogService.AlertAsync("O Código de Busca deve ser preenchido", "Atenção!");
-
-        else if (Ticket.Baggage && string.IsNullOrEmpty(Baggage.SearchCode))
-            await DialogService.AlertAsync("O Código de Busca da Bagagem deve ser preenchido", "Atenção!");
-        else if (!Ticket.Baggage && !string.IsNullOrEmpty(Baggage.SearchCode))
-            Baggage = new();
         else
         {
+
+            Ticket.SearchCode = Constants.GenerateRandomString(10);
+            if (CheckExistingTicket())
+                while(CheckExistingTicket())
+                {
+                    Ticket.SearchCode = Constants.GenerateRandomString(10);   
+                }
             Ticket.FlightId = SelectedFlight.Id;
-            Ticket.Passenger = Passenger;
-            Ticket.TotalPrice = Ticket.Baggage ? (getPrice(Ticket.FlightClassId) * 1.1) : getPrice(Ticket.FlightClassId);
+
+            var savePassenger = PassengersList.Find(p => p.Id == Passenger.Id);
+            if (savePassenger is null){
+                await HandleSavePassengerOperationEvent.InvokeAsync(Passenger);
+                await GetPassenger();
+                CheckExistingPassenger();
+            }
+
+            Ticket.PassengerId = Passenger.Id;
             await HandleSaveTicketOperationEvent.InvokeAsync(Ticket);
+            if (Ticket.Baggage)
+            {
+                TicketsList = await ticketService.GetAll(Constants.TicketBaseUrl);
+                var item = TicketsList.Find(t => t.SearchCode == Ticket.SearchCode);
+                if(item is not null)
+                {
+                    Ticket = item; 
+                    Baggage baggage = new() { SearchCode = Constants.GenerateRandomString(10), TicketId = Ticket.Id };
+                    await baggageService.Insert(baggage, Constants.BaggageBaseUrl);
+                }
+            }
+
             ClosePassengerDialog();
         }
 
@@ -160,29 +184,41 @@
     public void ClosePassengerDialog()
     {
         IsVisible = false;
-        FlightClassesList = [];
+        FlightClasses = [];
         Passenger = new();
         Ticket = new();
         StateHasChanged();
     }
 
-    public void ChangeTitle(string title)
+    public void GetPrice()
     {
-        Title = title;
-    }
-
-    public double getPrice(int flightClassId)
-    {
-        if(FlightClassesList is not null)
+        if (FlightClasses is not null)
         {
-            var flightClass = FlightClassesList.Find(f => f.Id == flightClassId);
-            return flightClass.SeatPrice;
+            var flightClass = FlightClasses.Find(f => f.Id == Ticket.FlightClassId);
+            Ticket.TotalPrice = Ticket.Baggage ? Math.Round((flightClass!.SeatPrice * 1.1), 2) : Math.Round(flightClass!.SeatPrice, 2);
         }
-        else return 0.00;
+        else 
+            Ticket.TotalPrice = 0.00;
     }
 
-    public void OnFlightClassChange(ChangeEventArgs<int, FlightClass> args)
+    public async void OnFlightClassChange(ChangeEventArgs<int, FlightClass> args)
     {
         Ticket.FlightClassId = args.Value;
+        if (CalculateRemainingSeats(FlightClasses.Find(c => c.Id == args.Value)!) <= 0){
+            await DialogService.AlertAsync("A classe selecionada não possui mais assentos disponíveis. Por favor, selecione outra", "Atenção!");
+            return;
+        }
+        Ticket.FlightClassId = args.Value;
+        GetPrice();
+    }
+
+    public int CalculateRemainingSeats(FlightClass flightClass)
+    {
+        var ticketList = TicketsList.FindAll(t => t.FlightId == Flight.Id && t.FlightClassId == flightClass.Id);
+        int remainingSeats = 0;
+        remainingSeats += flightClass.SeatQuantity;
+        remainingSeats -= ticketList.Count;
+
+        return remainingSeats;
     }
 }

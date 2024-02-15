@@ -77,6 +77,32 @@
             Action?.Invoke();
         }
 
+        //SearchFligh
+        public bool ShowSearchFlight { get; set; } = true;
+        public void SearchFlightClicked()
+        {
+            ResetAll();
+            ShowSearchFlight = true;
+            Action?.Invoke();
+        }
+
+        //Checkin
+        public bool ShowCheckInCard { get; set; } = true;
+        public void CheckInCard()
+        {
+            ResetAll();
+            ShowCheckInCard = true;
+            Action?.Invoke();
+        }
+
+        //Checkin
+        public bool ShowBagTag { get; set; } = true;
+        public void CheckBagTag()
+        {
+            ResetAll();
+            ShowBagTag = true;
+            Action?.Invoke();
+        }
 
         public void ResetAll()
         {
@@ -88,6 +114,9 @@
             ShowPassenger=false;
             ShowTicket = false;
             ShowUser = false;
+            ShowSearchFlight=false;
+            ShowCheckInCard = false;
+            ShowBagTag=false;   
         }
 
     }

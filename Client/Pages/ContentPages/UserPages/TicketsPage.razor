@@ -76,6 +76,21 @@
         </div>
     </div>
 }
+
+
+@if (ShowCheckin)
+{
+    <CheckIn @ref="checkInPage"
+        Ticket="TicketCheckIn"/>
+}
+
+
+@if (ShowTag)
+{
+    <BaggageTag @ref="baggageTag"
+             Ticket="TicketBag" />
+}
+
 @code {
 
     public string CPF { get; set; } = string.Empty;
@@ -86,17 +101,35 @@
     public Passenger Passenger { get; set; } = new();
 
     public List<Airport> Airports { get; set; } = new();
+    public List<Baggage> Baggages { get; set; } = new();
 
     protected async override Task OnInitializedAsync()
     {
-        Airports = await airportService.GetAll(Constants.AirportBaseUrl);
-        PassengerList = await passengerService.GetAll(Constants.PassengerBaseUrl);
+
+        await GetAirports();
+        await GetPassengers();
         allState.Action += StateHasChanged;
     }
 
+    private async Task GetAirports()
+    {
+        Airports = await airportService.GetAll(Constants.AirportBaseUrl);
+    }
+
+    private async Task GetBaggages()
+    {
+        Baggages = await baggageService.GetAll(Constants.BaggageBaseUrl);
+    }
+
+    private async Task GetPassengers()
+    {
+        PassengerList = await passengerService.GetAll(Constants.PassengerBaseUrl);
+    }
+
+
     public async Task SearchTickets()
     {
-        if (PassengerList is not null && PassengerList.Count > 0) 
+        if (PassengerList is not null && PassengerList.Count > 0)
             Passenger = PassengerList.Find(p => p.CPF == CPF);
         if (Passenger is not null)
         {
@@ -112,36 +145,54 @@
         var origin = Airports.Find(a => a.Id == ticket.Flight!.OriginAirportId);
         var destiny = Airports.Find(a => a.Id == ticket.Flight!.DestinyAirportId);
         if (origin is not null && destiny is not null)
+        {
             return $"[{origin.CodIATA}] {origin.City?.Name} - [{destiny.CodIATA}] {destiny.City?.Name}";
+        }
         else
+        {
             return "";
+        }
     }
 
+    //Checkin Card
+    CheckIn? checkInPage;
+    public bool ShowCheckin = false;
+    public Ticket TicketCheckIn { get; set; } = new();
 
-    public async Task GenerateCheckIn(Ticket ticket)
+    void GenerateCheckIn(Ticket ticket)
     {
-
-       
-    }
-
-    public async Task GenerateBaggage(Ticket ticket)
-    {
-
-        
-    }
-    public void GoBack()
-    {
-         CPF = string.Empty;
-        Passenger = new();
-        PassengerList = [];
-        Tickets = [];
+        ShowCheckin = true;
+        TicketCheckIn = ticket;
         StateHasChanged();
+        allState.CheckInCard();
     }
 
 
+    //Baggage Tag
+    BaggageTag? baggageTag;
+    public bool ShowTag = false;
+    public Ticket TicketBag { get; set; } = new();
+
+    public async void GenerateBaggage(Ticket ticket)
+    {
+        if (ticket.Baggage)
+        {
+            await GetBaggages();
+            var item = Baggages.Find(b => b.TicketId == ticket.Id);
+            if (item is null)
+            {
+                Baggage baggage = new() { SearchCode = Constants.GenerateRandomString(10), TicketId = ticket.Id };
+                await baggageService.Insert(baggage, Constants.BaggageBaseUrl);
+                await DialogService.AlertAsync("O Código de Busca da Bagagem foi gerado", "");
+            }
+            ShowTag = true;
+            TicketBag = ticket;
+            StateHasChanged();
+            allState.CheckBagTag();
+        }       
+    }
     public void Dispose()
     {
         allState.Action -= StateHasChanged;
     }
-
 }

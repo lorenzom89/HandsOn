@@ -1,5 +1,229 @@
-﻿<h3>SearchFlight</h3>
+﻿@implements IDisposable
 
+@if (allState.ShowSearchFlight)
+{
+<div class="container mt-5 ">
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="text-center">Busca de Vôos</h4>
+                    <div class="row">
+                        <div class="col-5">
+                            <SfDropDownList TValue="string" TItem="Airport" Placeholder="Selecione o aeroporto de origem" DataSource="Airports">
+                                <DropDownListFieldSettings Value="Id" Text="CodIATA"></DropDownListFieldSettings>
+                                <DropDownListEvents TValue="string" TItem="Airport" ValueChange="OnOriginAirportChange"></DropDownListEvents>
+                            </SfDropDownList>
+                        </div>
+                        <div class="col-5">
+                            <SfDropDownList TValue="string" TItem="Airport" Placeholder="Selecione o aeroporto de destino" DataSource="Airports">
+                                <DropDownListFieldSettings Value="Id" Text="CodIATA"></DropDownListFieldSettings>
+                                <DropDownListEvents TValue="string" TItem="Airport" ValueChange="OnDestinyAirportChange"></DropDownListEvents>
+                            </SfDropDownList>
+                        </div>
+                        <div class="col-2">
+                            <button class="btn btn-primary text-white" @onclick=SearchFlights>
+                                <span class="bi bi-search text-white"></span>
+                                <span> Buscar</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-header" style="max-height:580px; overflow-x:hidden; overflow-y:scroll">
+                    <div class="card-body">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th scope="col">#</th>
+                                    <th scope="col">Código do Vôo</th>
+                                    <th scope="col">Origem x Destino</th>
+                                    <th scope="col">Horário do Vôo</th>
+                                    <th scope="col">Assentos Restantes</th>
+                                    <th scope="col">Opções</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (Flights is not null)
+                                {
+                                    int count = 1;
+                                    foreach (var item in Flights)
+                                    {
+                                        <tr>
+                                            <th scope="row">@count</th>
+                                            <th>@item.SearchCode</th>
+                                            <th>@($"[{Airports.Find(c => c.Id == Origin)?.CodIATA}] - {Airports.Find(c => c.Id == Origin)?.City!.Name} x [{Airports.Find(c => c.Id == Destiny)?.CodIATA}] - {Airports.Find(c => c.Id == Destiny)?.City!.Name}")</th>
+                                            <th>@item.FlightTime.ToString("dd/MM/yyyy HH:mm") </th>
+                                            <th>@CalculateRemainingSeats(item)</th>
+                                            <th>
+                                                <i class="bi bi-cash cursorStyle" @onclick="()=>BuyTicket(item)"></i>
+                                            </th>
+                                        </tr>
+                                        count++;
+                                    }
+                                }
+                                else
+                                {
+                                    <tr>
+                                        <td colspan="6"><div class="alert alert-info text-center">Nenhum voo cadastrado de @($"{Airports.Find(c => c.Id == Origin)?.CodIATA} - {Airports.Find(c => c.Id == Origin)?.City!.Name}") para @($"{Airports.Find(c => c.Id == Destiny)?.CodIATA} - {Airports.Find(c => c.Id == Destiny)?.City!.Name}") ainda</div></td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+}
+
+<BuyTicketDialog @ref="buyTicketDialog"
+                SelectedFlight="Flight"
+                FlightClassesList="FlightClasses" 
+                TicketsList="Tickets"
+                HandleSavePassengerOperationEvent="HandleSavePassengerOperationEvent"
+                HandleSaveTicketOperationEvent="HandleSaveTicketOperationEvent">
+</BuyTicketDialog>
 @code {
+    public List<Airport> Airports { get; set; } = [];
+    public List<Flight> FlightsList { get; set; } = [];
+    public List<Flight> Flights { get; set; } = [];
+    public List<Ticket> Tickets { get; set; } = [];
+    public List<FlightClass> FlightClasses { get; set; } = [];
+    public Flight Flight { get; set; } = new();
 
+
+
+    int Origin = 0;
+    int Destiny = 0;
+
+
+
+    protected async override Task OnInitializedAsync()
+    {
+        await GetAirports();
+        await GetFlightClasses();
+        await GetTickets();
+        await GetFlights();
+        allState.Action += StateHasChanged;
+    }
+
+    private async Task GetFlights()
+    {
+        FlightsList = await flightService.GetAll(Constants.FlightBaseUrl);
+    }
+
+    private async Task GetTickets()
+    {
+        Tickets = await ticketService.GetAll(Constants.TicketBaseUrl);
+    }
+
+
+    private async Task GetAirports()
+    {
+        Airports = await airportService.GetAll(Constants.AirportBaseUrl);
+    }
+
+    private async Task GetFlightClasses()
+    {
+        FlightClasses = await flightClassService.GetAll(Constants.FlightClassBaseUrl);
+    }
+
+    public int CalculateRemainingSeats(Flight flight)
+    {
+
+        var classlist = FlightClasses.FindAll(f => f.FlightId == flight.Id);
+        var ticketList = Tickets.FindAll(t => t.FlightId == flight.Id);
+        int remainingSeats = 0;
+        foreach (var item in classlist)
+        {
+            remainingSeats += item.SeatQuantity;
+        }
+        remainingSeats -= ticketList.Count;
+
+        return remainingSeats;
+    }
+
+
+    public void SearchFlights()
+    {
+
+        Flights = [];
+        Flights = FlightsList.FindAll(f => f.OriginAirportId == Origin && f.DestinyAirportId == Destiny && f.FlightTime > DateTime.UtcNow);
+        StateHasChanged();
+    }
+
+
+    BuyTicketDialog? buyTicketDialog;
+    public async Task BuyTicket(Flight flight)
+    {
+        if (CalculateRemainingSeats(flight) <=0){
+            await DialogService.AlertAsync("Não há mais assentos disponiveis para este vôo", "Atenção!");
+            return;
+        }
+        Flight = flight;
+        buyTicketDialog?.OpenDialog();
+
+    }
+
+    private async Task HandleSaveTicketOperationEvent(Ticket ticket)
+    {
+        bool successCheck = false;
+        if (ticket.Id > 0)
+        {
+            var result = await ticketService.Update(ticket, Constants.TicketBaseUrl);
+            successCheck = await DisplayMessage(result.Flag, result.Message);
+        }
+        else
+        {
+            var result = await ticketService.Insert(ticket, Constants.TicketBaseUrl);
+            successCheck = await DisplayMessage(result.Flag, result.Message);
+        }
+        if (successCheck)
+        {
+            await GetTickets();
+            await GetFlights();
+            StateHasChanged();
+        }
+    }
+
+    private async Task HandleSavePassengerOperationEvent(Passenger passenger)
+    {
+        if (passenger.Id > 0)
+        {
+            var result = await passengerService.Update(passenger, Constants.PassengerBaseUrl);
+        }
+        else
+        {
+            var result = await passengerService.Insert(passenger, Constants.PassengerBaseUrl);
+        }
+    }
+
+    private async Task<bool> DisplayMessage(bool flag, string message)
+    {
+        if (flag)
+        {
+            await DialogService.AlertAsync(message, "Sucesso");
+            return true;
+        }
+        else
+        {
+            await DialogService.AlertAsync(message, "Atenção!");
+            return false;
+        }
+    }
+
+    public void OnOriginAirportChange(ChangeEventArgs<string, Airport> args)
+    {
+        Origin = int.Parse(args.Value);
+    }
+
+    public void OnDestinyAirportChange(ChangeEventArgs<string, Airport> args)
+    {
+        Destiny = int.Parse(args.Value);
+    }
+    public void Dispose()
+    {
+        allState.Action -= StateHasChanged;
+    }
 }

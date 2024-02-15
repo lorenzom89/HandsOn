@@ -2,14 +2,10 @@
 
 namespace BaseLibrary.Helpers
 {
-    public class ValidChars : ValidationAttribute
+    public class ValidChars(string validChars) : ValidationAttribute
     {
-        private readonly string valChars;
+        private readonly string valChars = validChars;
 
-        public ValidChars(string validChars)
-        {
-            this.valChars = validChars;
-        }
         public override bool IsValid(object value)
         {
             if (value == null) return false;

@@ -1,0 +1,167 @@
+﻿@implements IDisposable
+
+@if (allState.ShowCheckInCard)
+{
+    <div class="container mt-5 ">
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="card border-success shadow-lg">
+                    <div class="card-header">
+                        <span class="float-start nav-link bi bi-arrow-left-square-fill text-danger" @onclick="GoBack"> Voltar</span>
+                        <h4 class="text-center">Cartão de Embarque @Passenger.Name</h4>
+                        <div class="card-body">
+                            <div class="hpstack gap-2">
+                                <div class="vstack gap-3">
+
+                                    <table class="table border-danger">
+                                        <thead>Dados do Passageiro</thead>
+                                        <tbody>
+                                            <tr>
+                                                <td><h6 class="fw-bold">Nome:</h6></td>
+                                                <td>@Passenger.Name</td>
+                                            </tr>
+                                            <tr>
+                                                <td><h6 class="fw-bold">CPF:</h6></td>
+                                                <td>@Passenger.CPF</td>
+                                            </tr>
+                                            <tr>
+                                                <td><h6 class="fw-bold">Data de Nascimento:</h6></td>
+                                                <td>@Passenger.DateOfBirth.ToString("dd/MM/yyyy") </td>
+                                            </tr>
+
+                                        </tbody>
+                                    </table>
+                                    <table class="table border-danger">
+                                        <thead>Dados do Vôo</thead>
+                                        <tbody>
+                                            <tr>
+                                                <td><h6 class="fw-bold">Aeroporto de Origem</h6></td>
+                                                <td> @Origin.CodIATA - @Origin.City?.Name</td>
+                                            </tr>
+                                            <tr>
+                                                <td><h6 class="fw-bold">Aeroporto de Destino</h6></td>
+                                                <td> @Destiny.CodIATA - @Destiny.City?.Name</td>
+                                            </tr>
+                                            <tr>
+                                                <td><h6 class="fw-bold">Numero do Vôo</h6></td>
+                                                <td> @Flight.SearchCode</td>
+                                            </tr>
+                                            <tr>
+                                                <td><h6 class="fw-bold">Assento Selecionado:</h6></td>
+                                                <td>@Ticket.Seat</td>
+                                            </tr>
+                                            <tr>
+                                                <td><h6 class="fw-bold">Possui Bagagem:</h6></td>
+                                                <td>@(Ticket.Baggage ? "Sim" : "Não")</td>
+                                            </tr>
+                                            <tr>
+                                                <td><h6 class="fw-bold">Codigo da Bagagem:</h6></td>
+                                                <td>@Baggage?.SearchCode</td>
+                                            </tr>
+                                            <tr>
+                                                <td><h6 class="fw-bold">Classe do Vôo</h6></td>
+                                                <td>@TicketClass.Name</td>
+                                            </tr>
+
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public Ticket Ticket { get; set; } = new();
+
+    public Passenger Passenger { get; set; } = new();
+    public Flight Flight { get; set; } = new();
+    public FlightClass TicketClass { get; set; } = new();
+    public Baggage Baggage { get; set; } = new();
+    public List<Airport> Airports { get; set; } = new();
+    public Airport Origin { get; set; } = new();
+    public Airport Destiny { get; set; } = new();
+
+
+    public bool IsVisible { get; set; } = false;
+
+    protected async override Task OnInitializedAsync()
+    {
+        await GetFlightClass();
+        await GetPassenger();
+        await GetFlight();
+        await GetBaggage();
+        allState.Action += StateHasChanged;
+    }
+    protected async override void OnParametersSet()
+    {
+        base.OnParametersSet();
+        await GetFlightClass();
+        await GetPassenger();
+        await GetFlight();
+        await GetBaggage();
+        allState.Action += StateHasChanged;
+    }
+
+    private void GoBack()
+    {
+        Passenger = new();
+        Flight = new();
+        TicketClass = new();
+        Baggage = new();
+        Origin = new();
+        Destiny = new();
+        StateHasChanged();
+        Dispose();
+        allState.TicketClicked();
+    }
+
+    private async Task GetFlight()
+    {
+        Flight = await flightService.GetById(Ticket.FlightId, Constants.FlightBaseUrl);
+        if(Flight is not null)
+        {
+            await GetAirports();
+            Origin = Airports.Find(a=>a.Id == Flight.OriginAirportId)!;
+            Destiny = Airports.Find(a => a.Id == Flight.DestinyAirportId)!;
+        }
+
+    }
+
+    private async Task GetAirports()
+    {
+        Airports = await airportService.GetAll(Constants.AirportBaseUrl);
+    }
+
+    private async Task GetPassenger()
+    {
+        Passenger = await passengerService.GetById(Ticket.PassengerId, Constants.PassengerBaseUrl);
+    }
+
+    private async Task GetFlightClass()
+    {
+        TicketClass = await flightClassService.GetById(Ticket.FlightClassId, Constants.FlightClassBaseUrl);
+    }
+
+    private async Task GetBaggage()
+    {
+        if (Ticket.Baggage)
+        {
+            var list = await baggageService.GetAll(Constants.BaggageBaseUrl);
+            var baggage = list.Find(b => b.TicketId == Ticket.Id);
+            if (baggage is not null) Baggage = baggage;
+        }
+    }
+
+    public void Dispose()
+    {
+        allState.Action -= StateHasChanged;
+    }
+
+   
+}
+

@@ -18,10 +18,10 @@
         <div class="nav-scrollable">
             <nav class="flex-column">
                 <div class="nav-item px-3 cursorStyle">
-                    <NavLink class="nav-link p-2" Match="NavLinkMatch.All">
+                    <a class="nav-link p-2" @onclick="SearchFlightClicked">
                         <span class="bi bi-airplane-fill fs-3 text-center" aria-hidden="true" style="margin-top:-2rem"></span> 
                         <span> Buscar Voos</span>
-                    </NavLink>
+                    </a>
                 </div>             
                 <div class="nav-item px-3 cursorStyle">
                     <a class="nav-link p-2" @onclick="TicketClicked">
@@ -152,5 +152,8 @@
     void PassengerClicked() => allState.PassengerClicked();
     void TicketClicked() => allState.TicketClicked();
     void UserClicked() => allState.UserClicked();
+    void SearchFlightClicked() => allState.SearchFlightClicked();
+    void CheckInCard() => allState.CheckInCard();
+    void CheckBagTag() => allState.CheckBagTag();
 
 }
